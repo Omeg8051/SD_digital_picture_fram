@@ -1,114 +1,37 @@
-/*
-Read only simulation model of SD card.
-No high Z behavior on bus_miso since it is not expected to have more then one present on the bus.
-*/
-module sim_modle_sd (
-    input clk,//Internal logic use. Same phase and freq as bus_clk.
-    input sim_rst,//Simulates power on event
-    input bus_clk,
-    input bus_cs,
-    input bus_mosi,
-    output bus_miso,
-    output [7:0]debug_status
-    /*
-    debug status code:
-        example_status: <number>
-    */
+
+module d_pic_f (
+    input clk,
+    input rst_n,
+
+    //SD spi port
+    output SD_spi_clk,
+    output SD_spi_cs,
+    output SD_spi_mosi,
+    input SD_spi_miso,
+    
+    //LCD spi port
+    output LCD_spi_clk,
+    output LCD_spi_cs,
+    output LCD_spi_mosi,
+    input LCD_spi_miso,
+
+    //UART control port
+    output UART_tx,
+    input UART_rx,
 );
 
 /*
 state encoding:
-{sdio,xxx,
-xxxx,
-multi_blk_op,   single_blk_op, init_1,  init_0,
-x,  data_strm,  ready,  spi_mode}
+one bit per state(use parallel case)
 */
-
 /*
-reset to this state
+init_peripheral
+reset from any_state to here.
 
-acceptable command -> response[ + next]:
-    cmd0 -> read 2 bytes(FFh, 01h)
-*/
-localparam sd_state_p_on = 16'h0000;
+Behavior:
+Command each spi controllers to initiallize their respective peripherals.
 
-/*
-read 10B from sd_state_p_on to this state
 
-acceptable command -> response[ + next]:
-    cmd0 -> read 2 bytes(FFh, 01h)
-*/
-localparam sd_state_sdio = 16'h8000;//sdio
-
-/*
-cmd0 from sd_state_p_on to this state
-
-acceptable command -> response[ + next]:
-    cmd8 -> read 6 bytes(FFh, 01h, 00h, 80h, FFh, 80h)
-*/
-localparam sd_state_init_0 = 16'h0011;//SPI | init_0
-
-/*
-cmd8 from sd_state_init_0 to this state
-
-acceptable command -> response[ + next]:
-    cmd55 -> read 2 bytes(FFh, 01h) +
-    acmd41 -> read 2 bytes(FFh, 01h/00h)
-*/
-localparam sd_state_init_1 = 16'h0021;// SPI | init_1
-
-/*
-acmd41 return 00h from sd_state_init_1 to this state
-cmd12 and return 00h from sd_state_m_blk_rd to this state
-read 512+2 bytes from sd_state_s_blk_rd to this state
-
-acceptable command -> response[ + next]:
-    cmd17 -> read 2 bytes(FFh, 01h)
-    cmd18 -> read 2 bytes(FFh, 01h)
-*/
-localparam sd_state_ready = 16'h0003;//SPI | ready
-
-/*
-cmd17 from sd_state_ready to this state
-
-acceptable command -> response[ + next]:
-    read 1 byte (FFh)
-    read 1 byte (FEh)
-*/
-localparam sd_state_s_blk_setup = 16'h0041;//SPI | single_blk_op
-
-/*
-cmd18 from sd_state_ready to this state
-
-acceptable command -> response[ + next]:
-    read 1 byte (FFh)
-    read 1 byte (FEh)
-*/
-localparam sd_state_m_blk_setup = 16'h0081;//SPI | single_blk_op
-
-/*
-read 1 byte (FEh) from sd_state_s_blk_setup to this state
-
-acceptable command -> response[ + next]:
-    read 512 byte (55h, AAh ...) +
-    read 2 byte (66h)
-*/
-localparam sd_state_s_blk_rd = 16'h0045;//SPI | single_blk_op | data_strm
-
-/*
-read 1 byte (FEh) from sd_state_m_blk_setup to this state
-
-acceptable command -> response[ + next]:
-    read 512 byte (55h, AAh ...) +
-    read 2 byte (66h) + optional
-    read 512 byte (55h, AAh ...) +
-    read 2 byte (66h) + optional
-    cmd12
-*/
-localparam sd_state_m_blk_rd = 16'h0085;//SPI | single_blk_op | data_strm
-
-/*
-OTHERWISE, REGARD AS ILLEGAL COMMAND.
 */
 
 //interaction bit list
