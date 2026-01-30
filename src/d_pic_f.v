@@ -24,14 +24,87 @@ module d_pic_f (
 state encoding:
 one bit per state(use parallel case)
 */
+
 /*
-init_peripheral
-reset from any_state to here.
+##init_peripheral
+(reset from any_state to here.)
 
 Behavior:
 Command each spi controllers to initiallize their respective peripherals.
 
+Transition to blk_offset_reset:
+    After all peripheral module reports not busy.
+*/
 
+/*
+##blk_offset_reset
+
+Behavior:
+Set $blk_offset to 0
+
+Transition to start_SD_blk_read:
+    On the next clock
+*/
+
+/*
+##start_SD_blk_read
+
+Behavior:
+Send SD blk read command (on blk address $blk_id + $blk_offset)
+Send ILI9341 data transfer sequence
+
+Transition to stream_data_2_lcd:
+    After SD_interface reports not busy. (Got data token FEh)
+    and after LCD_interface reports not bust. (Data transfer sequence complete)
+*/
+
+/*
+##stream_data_2_lcd
+
+Behavior:
+    Stream 512 bytes block in 4 bytes words from SD to LCD.
+
+Transition to dispose_2b_crc:
+    After SD_interface reports not busy. (512 bytes read)
+    and after LCD_interface reports not bust. (512 bytes written)
+*/
+
+/*
+##dispose_2b_crc
+
+Behavior:
+    Read 2B CRC from SD card
+    increment $blk_offset
+
+Transition to start_SD_blk_read:
+    After SD_interface reports not busy. (2 bytes read)
+    and $blk_offset < 300
+
+Transition to wait_4_uart:
+    After SD_interface reports not busy. (2 bytes read)
+    and $blk_offset >= 300
+*/
+
+/*
+##wait_4_uart
+
+Behavior:
+    Stay here untill any of the UART operation bits got set.
+    Respond (set) UART ack bit.
+
+Transition to blk_idx_mod:
+    Either pic_incr or pic_decr is set.
+*/
+
+/*
+##blk_idx_mod
+
+Behavior:
+    Modify $blk_id according to uart_op bits
+    Clear UART ack bit.
+
+Transition to blk_offset_reset:
+    On next clock.
 */
 
 //interaction bit list
