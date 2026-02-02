@@ -30,7 +30,7 @@ one bit per state(use parallel case)
 (reset from any_state to here.)
 
 Behavior:
-Command each spi controllers to initiallize their respective peripherals.
+    Command each spi controllers to initiallize their respective peripherals.
 
 Transition to blk_offset_reset:
     After all peripheral module reports not busy.
@@ -40,7 +40,7 @@ Transition to blk_offset_reset:
 ##blk_offset_reset
 
 Behavior:
-Set $blk_offset to 0
+    Set $blk_offset to 0
 
 Transition to start_SD_blk_read:
     On the next clock
@@ -50,8 +50,8 @@ Transition to start_SD_blk_read:
 ##start_SD_blk_read
 
 Behavior:
-Send SD blk read command (on blk address $blk_id + $blk_offset)
-Send ILI9341 data transfer sequence
+    Send SD blk read command (on blk address $blk_id + $blk_offset)
+    Send ILI9341 data transfer sequence
 
 Transition to stream_data_2_lcd:
     After SD_interface reports not busy. (Got data token FEh)
