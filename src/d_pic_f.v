@@ -127,52 +127,11 @@ localparam sdspi_cmd12 = 8'h4C;
 localparam sdspi_cmd17 = 8'h51;
 localparam sdspi_cmd18 = 8'h52;
 
-reg [15:0]sd_card_state;
-reg [15:0]sd_card_state_next;
-reg state_trans;
-reg bus_cs_r;
-reg [15:0]op_bit_counter;
-reg [15:0]op_bit_counter_exp;
-reg [15:0]timed_transition_counter;
-reg [47:0]cmd_buffer;
-
-wire [7:0]cmd_cur;
-assign cmd_cur = cmd_buffer[47:40];
-
-always @(posedge clk or negedge sim_rst ) begin
-    if(~sim_rst) begin
-        
-    end else begin
-        
-    end
-end
 
 /*
 state transition beyond this point
 */
-always @(posedge clk or negedge sim_rst ) begin
-    if(~sim_rst) begin
-        //simulates power on
-        sd_card_state <= sd_state_p_on;
-        op_bit_counter <= 16'h0;
-        op_bit_counter_exp <= 16'h0;
-    end else if(state_trans) begin
-        //load next state only.
-        sd_card_state <= sd_card_state_next;
-        op_bit_counter <= 16'h0;
-        op_bit_counter_exp <= op_bit_counter_exp;
-    end else if(bus_cs_r) begin
-        // intrement bit interact counter
-        sd_card_state <= sd_card_state_next;
-        op_bit_counter <= op_bit_counter + 16'h1;
-        op_bit_counter_exp <= op_bit_counter_exp;
-    end else begin
-        //hold
-        sd_card_state <= sd_card_state_next;
-        op_bit_counter <= op_bit_counter;
-        op_bit_counter_exp <= op_bit_counter_exp;
-    end
-end
+
 /**
 *8==================================================================================D
 *8==================================================================================D
