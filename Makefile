@@ -1,7 +1,7 @@
 default: compile execute display
 
 
-compile: $(wildcard *.v) $(wildcard ./src/*.v) $(wildcard ./src/*.sv)
+compile: $(wildcard *.v) $(wildcard *.sv) $(wildcard ./src/*.v)
 	iverilog $^
 
 execute: $(wildcard *.out)
