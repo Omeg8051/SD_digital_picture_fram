@@ -8,8 +8,8 @@ module lcd_if (
     input stream_512B,      //stream 512 bytes at 4 bytes each stream trigger
 
     //flow control
-    input trigger,
-    output busy,
+    input if_begin,
+    output if_busy,
 
     //data stream
     input [31:0]stream_data,
@@ -17,11 +17,12 @@ module lcd_if (
     output stream_busy,
 
     //spi phy
-    output spi_clk,
-    output spi_mosi,
-    input spi_miso,
+    output [31:0]spi_mosi,
+    input [31:0]spi_miso,
+    output spi_begin,
+    output spi_ready,
+    input spi_busy,
     output spi_cs
-
 
 );
     

@@ -10,19 +10,21 @@ module sd_if (
     input rm_crc,       //read 2 bytes of trailing CRC
 
     //flow control
-    input [31:0]blk_addr,
-    input trigger,
-    output busy,
+    input [3:0]img_id,
+    input if_begin,
+    output if_busy,
 
     //data stream
     output [31:0]stream_data,
     output stream_trigger,
     input stream_busy,
+
     //spi phy
-    output spi_clk,
-    output spi_mosi,
-    input spi_miso,
-    output spi_cs
+    output [31:0]spi_mosi,
+    input [31:0]spi_miso,
+    output spi_begin,
+    output spi_ready,
+    input spi_busy
 
 
 );
