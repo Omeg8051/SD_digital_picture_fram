@@ -17,7 +17,7 @@ module d_pic_f (
 
     //UART control port
     output UART_tx,
-    input UART_rx,
+    input UART_rx
 );
 
 /*
@@ -116,7 +116,7 @@ localparam sd_bit_ready = 16'd64;//6B cmd17/18 + 1B FFh + 1B R1
 localparam sd_bit_s_blk_setup = 16'd1200;//149B FFh + 1B FEh
 localparam sd_bit_m_blk_setup = 16'd1200;//149B FFh + 1B FEh
 localparam sd_bit_s_blk_rd = 16'd4112;//512B 5Ah + 2B 69h
-localparam sd_bit_s_blk_rd = 16'd65535;//infinite untill cmd12 is accepted
+localparam sd_bit_m_blk_rd = 16'd65535;//infinite untill cmd12 is accepted
 
 //command list:
 localparam sdspi_cmd0 = 8'h40;
