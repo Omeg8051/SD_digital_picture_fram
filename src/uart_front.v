@@ -44,8 +44,8 @@ localparam UART_STATE_byte_valid = 4'hA ;
 //localparam CMD_CHAR_decrement = ;
 
 reg [3:0] uart_state;
-reg [31:0] bit_divider;
-reg [31:0] bit_divider_cnt;
+reg [11:0] bit_divider;//slowest is 1200 baud at 4M/3333
+reg [11:0] bit_divider_cnt;
 wire bit_divider_cnt_z;
 assign bit_divider_cnt_z = ~|bit_divider_cnt;
 localparam p_baud_rate = 250000;
@@ -77,7 +77,8 @@ always @(posedge clk or negedge rst_n) begin
 
     if(~rst_n) begin
         uart_state <= UART_STATE_idle;
-        bit_divider <= p_bit_divider_init;
+        bit_divider <= p_bit_divider_init[11:0];
+        bit_divider_cnt <= 12'b0;
         rx_byte_r <= 8'b0;
         uart_valid_r <= 1'b0;
         data_rx_r <= 8'b0;
@@ -87,7 +88,7 @@ always @(posedge clk or negedge rst_n) begin
                 if(~uart_rx_r) begin
                     uart_state <= UART_STATE_start_bit;
                     //setup for next state
-                    bit_divider_cnt <= {1'b0,bit_divider[31:1]};//0.5 bit
+                    bit_divider_cnt <= {1'b0,bit_divider[11:1]};//0.5 bit
                 end else begin
                     //current state routine for "UART_STATE_idle"
                 end
