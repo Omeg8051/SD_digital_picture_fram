@@ -1,7 +1,7 @@
 
 `timescale 1ns/1ps
-//`define TEST_UART_FRONT
-`define TEST_CTL_IF
+`define TEST_UART_FRONT
+//`define TEST_CTL_IF
 module tb;
 /*
 uart_front test bench:
@@ -71,6 +71,35 @@ initial begin
     #160 rx = 1'b0;//bit 5
     #160 rx = 1'b0;//bit 6
     #160 rx = 1'b1;//bit 7
+    #160 rx = 1'b1;//stop bit
+    
+    //test hold data before ready function;
+    #357.2 ready = 1'b0;
+    #20 ready = 1'b0;
+
+    #160 rx = 1'b0;//start
+    #160 rx = 1'b1;//bit 0
+    #160 rx = 1'b1;//bit 1
+    #160 rx = 1'b1;//bit 2
+    #160 rx = 1'b1;//bit 3
+    #160 rx = 1'b0;//bit 4
+    #160 rx = 1'b0;//bit 5
+    #160 rx = 1'b0;//bit 6
+    #160 rx = 1'b0;//bit 7
+    #160 rx = 1'b1;//stop bit
+
+    #357.2 ready = 1'b1;
+    #20 ready = 1'b0;
+
+    #160 rx = 1'b0;//start
+    #160 rx = 1'b1;//bit 0
+    #160 rx = 1'b0;//bit 1
+    #160 rx = 1'b0;//bit 2
+    #160 rx = 1'b1;//bit 3
+    #160 rx = 1'b0;//bit 4
+    #160 rx = 1'b1;//bit 5
+    #160 rx = 1'b1;//bit 6
+    #160 rx = 1'b0;//bit 7
     #160 rx = 1'b1;//stop bit
 
     #357.2 ready = 1'b1;
