@@ -4,7 +4,7 @@
 //`define TEST_CTL_IF
 //`define TEST_LCD_IF_PX_SEQ
 //`define TEST_LCD_IF_INIT_SEQ
-`define TEST_LCD_IF_STREAM_512B
+//`define TEST_LCD_IF_STREAM_512B
 module tb;
 /*
 uart_front test bench:
@@ -578,7 +578,7 @@ lcd_if dut_if(
 
 `else
     initial begin
-        $display("===================\nno_module_to _test\n===================\n");
+        $display("===================\nno_module_to _test\n===================\nModify (comment | uncomment) the begining of tb.sv to select test targets.\n===================\n");
         $finish();
     end
     
