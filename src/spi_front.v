@@ -33,6 +33,16 @@ reg [31:0]spi_tx_data;
 assign spi_busy = spi_busy_r;
 assign spi_clk_o = spi_clk_in & spi_clk_gate;
 
+reg spi_begin_r;
+
+always @(posedge spi_clk_in or negedge rst_n) begin
+    if(~rst_n)begin
+        spi_begin_r <= 1'b0;
+    end else begin
+        spi_begin_r <= spi_begin;
+    end
+end
+
 
 always @(negedge spi_clk_in or negedge rst_n) begin
     if(~rst_n) begin
@@ -45,7 +55,7 @@ always @(negedge spi_clk_in or negedge rst_n) begin
     end else begin
         case (spi_state)
             SPI_STATE_IDLE:begin
-                if(spi_begin)begin
+                if(spi_begin_r)begin
                     spi_state <= SPI_STATE_ACTIVE;
                     spi_bit_ptr <= {{2{spi_wide}},3'h7};
                     spi_clk_gate <= 1'b1;
