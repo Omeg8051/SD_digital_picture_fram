@@ -3,7 +3,8 @@
 //`define TEST_UART_FRONT
 //`define TEST_CTL_IF
 //`define TEST_LCD_IF_PX_SEQ
-`define TEST_LCD_IF_INIT_SEQ
+//`define TEST_LCD_IF_INIT_SEQ
+`define TEST_LCD_IF_STREAM_512B
 module tb;
 /*
 uart_front test bench:
@@ -384,7 +385,6 @@ lcd_if dut_if(
     .spi_cs(spi_cs)
 );
 
-
 `elsif TEST_LCD_IF_INIT_SEQ
 reg clk;
 reg rst_n;
@@ -478,6 +478,103 @@ lcd_if dut_if(
     .spi_cs(spi_cs)
 );
 
+
+
+`elsif TEST_LCD_IF_STREAM_512B
+reg clk;
+reg rst_n;
+reg lcd_init;
+reg lcd_px;
+reg lcd_stream;
+wire lcd_busy;
+reg lcd_begin;
+
+reg [31:0]stream_data;
+reg stream_trigger;
+
+wire spi_phy_begin;
+wire spi_phy_busy;
+wire spi_phy_wide;
+wire spi_cs;
+wire [31:0]spi_phy_mosi;
+
+wire spi_mosi;
+wire spi_phy_clk;
+wire spi_phy_cs;
+wire lcd_data_cmd;
+
+initial begin
+    forever begin
+        #5 clk = ~clk;
+    end
+end
+
+initial begin
+    $display("===================\nTesting: lcd_if_pixel_sequence.\n===================\n");
+    $dumpfile("dump.vcd");
+    $dumpvars(0);
+end
+
+initial begin
+    clk = 1'b0; rst_n = 1'b1; lcd_init = 1'b0; lcd_px = 1'b0; lcd_stream = 1'b0; lcd_begin = 1'b0; stream_trigger = 1'b0; stream_data = 32'h55AAE621;
+    #100 rst_n = 1'b0;
+    #100 rst_n = 1'b1; lcd_stream = 1'b1; stream_trigger = 1'b1;
+
+    #100 lcd_begin = 1'b1;
+    #10 lcd_begin = 1'b0;
+    #6000 $finish();
+end
+
+spi_front dut_phy(
+    .spi_clk_in(clk),
+    .rst_n(rst_n),
+
+    //spi interface
+    .spi_clk_o(spi_phy_clk),
+    //output.spi_clk_t(),
+    .spi_mosi_o(spi_mosi),
+    //output.spi_mosi_t(),
+    .spi_miso_i(1'b1),
+
+    //data interface
+    .data_mosi(spi_phy_mosi),
+    //output.data_miso(),
+
+    //control interface
+    .spi_begin(spi_phy_begin),
+    .spi_wide(spi_phy_wide),
+    .spi_busy(spi_phy_busy)
+);
+
+lcd_if dut_if(
+    .clk(clk),
+    .rst_n(rst_n),
+    
+    //actions
+    .init(lcd_init),             //initialize LCD
+    .px_stream_cmd(lcd_px),    //transmit pixel commands
+    .stream_512B(lcd_stream),      //stream 512 bytes at 4 bytes each stream trigger
+
+    //flow control
+    .if_begin(lcd_begin),
+    .if_busy(lcd_busy),
+
+    //data stream
+    .stream_data(stream_data),
+    .stream_trigger(1'h0),
+    //output .stream_busy(),
+
+    //lcd control pin
+    .lcd_data_cmd(lcd_data_cmd),
+
+    //spi phy
+    .spi_mosi(spi_phy_mosi),
+    //input [31:0]spi_miso, This IF output only. No read back
+    .spi_begin(spi_phy_begin),
+    .spi_wide(spi_phy_wide),
+    .spi_busy(spi_phy_busy),
+    .spi_cs(spi_cs)
+);
 
 `else
     initial begin

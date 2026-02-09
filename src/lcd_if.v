@@ -273,7 +273,7 @@ end
 input sample block
 */
 reg if_begin_r;
-reg stream_data_r;
+reg [31:0]stream_data_r;
 reg stream_trigger_r;
 //reg spi_miso_r;
 reg spi_busy_r;
@@ -429,23 +429,30 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             LCD_STATE_wait_stream: begin
-                if(state_op_term)begin
-                    lcd_state <= LCD_STATE_idle;
+                if(~spi_busy_r)begin
+                    lcd_state <= state_op_term? LCD_STATE_idle : LCD_STATE_tx_4B;
                     //setup for next state
+                    spi_mosi_r <= stream_data_r;
+                    spi_wide_r <= 1'b1;
+                    spi_begin_r <= 1'b0;
+                    spi_cs_r <= state_op_term;
+                    state_op_cnt <= state_op_cnt + 8'h1;
                 end else begin
                     //state routine
-                    state_op_cnt <= state_op_cnt - 8'h1;
 
                 end
             end
             LCD_STATE_tx_4B: begin
-                if(state_op_term)begin
-                    lcd_state <= LCD_STATE_idle;
+                if(spi_busy_r)begin
+                    lcd_state <= LCD_STATE_wait_stream;
+                    //retract trigger
+                    spi_begin_r <= 1'b0;  
                     //setup for next state
                 end else begin
                     //state routine
-                    state_op_cnt <= state_op_cnt - 8'h1;
-
+                    //trigger transfer
+                    spi_begin_r <= 1'b1;    
+                    
                 end
             end
             default: begin
