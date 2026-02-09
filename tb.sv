@@ -1,5 +1,5 @@
 
-`timescale 1ns/1ps
+`timescale 100ns/100ps
 //`define TEST_UART_FRONT
 //`define TEST_CTL_IF
 //`define TEST_LCD_IF_PX_SEQ
@@ -522,7 +522,7 @@ initial begin
 
     #100 lcd_begin = 1'b1;
     #10 lcd_begin = 1'b0;
-    #6000 $finish();
+    #50000 $finish();
 end
 
 spi_front dut_phy(
