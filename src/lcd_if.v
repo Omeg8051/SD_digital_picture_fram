@@ -1,4 +1,4 @@
-//cmd define
+/*cmd define
 `define ILI9341_CMD_NOP								8'h00
 `define ILI9341_CMD_SOFT_RST						8'h01
 //read 4 bytes afterward
@@ -118,7 +118,7 @@
 `define ILI9341_CMD_V_COM_CTL_2						8'hC7
 
 
-
+*/
 module lcd_if (
     input clk,
     input rst_n,
