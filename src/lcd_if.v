@@ -127,7 +127,7 @@ module lcd_if (
     input init,             //initialize LCD
     input px_stream_cmd,    //transmit pixel commands
     input stream_512B,      //stream 512 bytes at 4 bytes each stream trigger
-    input [4:0]img_id,      //max image count is 32 for a minimum 4GiB card
+    //input [4:0]img_id,      //max image count is 32 for a minimum 4GiB card
 
     //flow control
     input if_begin,
@@ -277,7 +277,7 @@ reg [31:0]stream_data_r;
 reg stream_trigger_r;
 //reg spi_miso_r;
 reg spi_busy_r;
-reg [31:0]blk_index;
+//reg [31:0]blk_index;
 
 always @(posedge clk) begin
     lcd_op_bits_r <= lcd_op_bits;
@@ -286,7 +286,7 @@ always @(posedge clk) begin
     stream_trigger_r <= stream_trigger;
     //spi_miso_r <= spi_miso;
     spi_busy_r <= spi_busy;
-    blk_index <= img_id * 300;//implement with faster sum of shifts and padd with 0 later.
+    //blk_index <= img_id * 300;//implement with faster sum of shifts and padd with 0 later.
 end
 
 //reg if_busy_r;
