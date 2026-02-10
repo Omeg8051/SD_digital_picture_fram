@@ -1,3 +1,5 @@
+`define DISABLE_DELAY
+
 /*cmd define
 `define ILI9341_CMD_NOP								8'h00
 `define ILI9341_CMD_SOFT_RST						8'h01
@@ -177,6 +179,7 @@ reg [7:0]state_op_cnt;
 reg [7:0]state_op_top;
 wire state_op_term;
 assign state_op_term = ~|(state_op_cnt ^ state_op_top); //state terminate after state_op_cnt == state_op_top.
+assign spi_begin_term = |((state_op_cnt+8'h1) ^ state_op_top); //state terminate after state_op_cnt == state_op_top.
 
 
 
@@ -275,6 +278,8 @@ input sample block
 reg if_begin_r;
 reg [31:0]stream_data_r;
 reg stream_trigger_r;
+reg stream_busy_r;
+assign stream_busy = stream_busy_r;
 //reg spi_miso_r;
 reg spi_busy_r;
 //reg [31:0]blk_index;
@@ -298,7 +303,6 @@ state transition beyond this point.
 always @(posedge clk or negedge rst_n) begin
     if(~rst_n)begin
         lcd_state       <=  3'h0;
-        lcd_op_bits_r   <=  3'b0;
         strm_data_r     <=  32'h0;
         state_op_cnt    <=  6'h0;
         state_op_top    <=  6'h0;
@@ -356,7 +360,13 @@ always @(posedge clk or negedge rst_n) begin
                     //setup for next state
                 end else begin
                     //state routine
-                    if(~spi_busy_r & ~spi_begin_r & ~state_op_term)begin
+                    if(spi_busy_r & spi_begin_r)begin
+                        //Deasserts begin_r to wait for spi to complete;
+                        spi_begin_r <= 1'b0;
+                    end else if(lcd_cmd_del_cnt_nz)begin
+                        //Count down if there is delay issued in the sequence modifier bits.
+                        lcd_cmd_del_cnt <= lcd_cmd_del_cnt - 20'h1;
+                    end else if(~spi_busy_r & ~spi_begin_r & ~state_op_term)begin
                         /*
                         advance state op counter
                         load current transfer from sequence
@@ -364,9 +374,9 @@ always @(posedge clk or negedge rst_n) begin
                         */
                         state_op_cnt <= state_op_cnt + 8'b1;//Only increment if not term yet;
                         spi_mosi_r <= {24'h0,lcd_init_routine_seq[state_op_cnt][7:0]};
-                        spi_begin_r <= 1'b1;
+                        spi_begin_r <= spi_begin_term;
                         lcd_data_cmd_r <= lcd_init_routine_seq[state_op_cnt][8];
-
+                        `ifndef DISABLE_DELAY
                         if(lcd_init_routine_seq[state_op_cnt][9])begin
                             lcd_cmd_del_cnt <= LCD_CMD_DEL_50MS_COUNT;
                         end else if(lcd_init_routine_seq[state_op_cnt][10])begin
@@ -374,12 +384,7 @@ always @(posedge clk or negedge rst_n) begin
                         end else begin
                             lcd_cmd_del_cnt <= 20'h0;
                         end
-                    end else if(spi_busy_r & spi_begin_r)begin
-                        //Deasserts begin_r to wait for spi to complete;
-                        spi_begin_r <= 1'b0;
-                    end else if(lcd_cmd_del_cnt_nz)begin
-                        //Count down if there is delay issued in the sequence modifier bits.
-                        lcd_cmd_del_cnt <= lcd_cmd_del_cnt - 20'h1;
+                        `endif
                     end else begin
                         //do nothing?
                     end
@@ -404,9 +409,9 @@ always @(posedge clk or negedge rst_n) begin
                         */
                         state_op_cnt <= state_op_cnt + 8'b1;//Only increment if not term yet;
                         spi_mosi_r <= {24'h0,lcd_px_routine_seq[state_op_cnt][7:0]};
-                        spi_begin_r <= 1'b1;
+                        spi_begin_r <= spi_begin_term;
                         lcd_data_cmd_r <= lcd_px_routine_seq[state_op_cnt][8];
-
+                        `ifndef DISABLE_DELAY
                         if(lcd_px_routine_seq[state_op_cnt][9])begin
                             lcd_cmd_del_cnt <= LCD_CMD_DEL_50MS_COUNT;
                         end else if(lcd_px_routine_seq[state_op_cnt][10])begin
@@ -414,6 +419,7 @@ always @(posedge clk or negedge rst_n) begin
                         end else begin
                             lcd_cmd_del_cnt <= 20'h0;
                         end
+                        `endif
                     end else if(spi_busy_r & spi_begin_r)begin
                         //Deasserts begin_r to wait for spi to complete;
                         spi_begin_r <= 1'b0;
@@ -429,7 +435,7 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             LCD_STATE_wait_stream: begin
-                if(~spi_busy_r)begin
+                if(~spi_busy_r & stream_trigger_r)begin
                     lcd_state <= state_op_term? LCD_STATE_idle : LCD_STATE_tx_4B;
                     //setup for next state
                     spi_mosi_r <= stream_data_r;
@@ -437,6 +443,7 @@ always @(posedge clk or negedge rst_n) begin
                     spi_begin_r <= 1'b0;
                     spi_cs_r <= state_op_term;
                     state_op_cnt <= state_op_cnt + 8'h1;
+                    stream_busy_r <= 1'b1;
                 end else begin
                     //state routine
 
@@ -448,6 +455,7 @@ always @(posedge clk or negedge rst_n) begin
                     //retract trigger
                     spi_begin_r <= 1'b0;  
                     //setup for next state
+                    stream_busy_r <= 1'b0;
                 end else begin
                     //state routine
                     //trigger transfer
@@ -457,7 +465,6 @@ always @(posedge clk or negedge rst_n) begin
             end
             default: begin
                 lcd_state       <=  3'h0;
-                lcd_op_bits_r   <=  3'b0;
                 strm_data_r     <=  32'h0;
                 state_op_cnt    <=  8'h0;
                 state_op_top    <=  8'h0;
