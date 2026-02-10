@@ -4,9 +4,7 @@ module spi_front (
 
     //spi interface
     output spi_clk_o,
-    output spi_clk_t,
     output spi_mosi_o,
-    output spi_mosi_t,
     input spi_miso_i,
 
     //data interface
