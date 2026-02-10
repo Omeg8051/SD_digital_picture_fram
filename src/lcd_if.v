@@ -334,11 +334,11 @@ always @(posedge clk or negedge rst_n) begin
                             spi_cs_r        <=  1'b0;
                             spi_begin_r     <=  1'b0;
                             spi_wide_r      <=  1'b0;
-
                         end
                         LCD_OP_BITS_stream : begin
                             lcd_state <= LCD_STATE_wait_stream;
                             state_op_top <= 8'd128;//128 transfer for 4B each
+                            lcd_data_cmd_r  <=  1'b1;
                         end 
                         default: begin
                             lcd_state <= LCD_STATE_idle;
@@ -444,6 +444,7 @@ always @(posedge clk or negedge rst_n) begin
                     spi_cs_r <= state_op_term;
                     state_op_cnt <= state_op_cnt_next;
                     stream_busy_r <= 1'b1;
+                    lcd_data_cmd_r <= ~state_op_term;
                 end else begin
                     //state routine
 

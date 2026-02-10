@@ -3,8 +3,8 @@
 //`define TEST_UART_FRONT
 //`define TEST_CTL_IF
 //`define TEST_LCD_IF_PX_SEQ
-`define TEST_LCD_IF_INIT_SEQ
-//`define TEST_LCD_IF_STREAM_512B
+//`define TEST_LCD_IF_INIT_SEQ
+`define TEST_LCD_IF_STREAM_512B
 
 `define DISABLE_DELAY
 module tb;
@@ -492,6 +492,7 @@ wire lcd_busy;
 reg lcd_begin;
 
 reg [31:0]stream_data;
+reg [31:0]spi_bit_cnt;
 reg stream_trigger;
 
 wire spi_phy_begin;
@@ -517,7 +518,12 @@ initial begin
     $dumpvars(0);
 end
 
+always @(posedge spi_phy_clk) begin
+    spi_bit_cnt <= spi_bit_cnt + 32'h1;
+end
+
 initial begin
+    spi_bit_cnt <= 32'h0;
     clk = 1'b0; rst_n = 1'b1; lcd_init = 1'b0; lcd_px = 1'b0; lcd_stream = 1'b0; lcd_begin = 1'b0; stream_trigger = 1'b0; stream_data = 32'h55AAE621;
     #100 rst_n = 1'b0;
     #100 rst_n = 1'b1; lcd_stream = 1'b1; stream_trigger = 1'b1;
@@ -563,7 +569,7 @@ lcd_if dut_if(
 
     //data stream
     .stream_data(stream_data),
-    .stream_trigger(1'h0),
+    .stream_trigger(1'h1),
     //output .stream_busy(),
 
     //lcd control pin
