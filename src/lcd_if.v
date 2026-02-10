@@ -1,5 +1,3 @@
-`define DISABLE_DELAY
-
 /*cmd define
 `define ILI9341_CMD_NOP								8'h00
 `define ILI9341_CMD_SOFT_RST						8'h01
