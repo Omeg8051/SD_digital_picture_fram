@@ -174,10 +174,12 @@ reg [2:0]lcd_state;
 reg [2:0]lcd_op_bits_r;
 reg [31:0]strm_data_r;
 reg [7:0]state_op_cnt;
+wire [7:0]state_op_cnt_next;
+assign state_op_cnt_next = state_op_cnt + 8'h1;
 reg [7:0]state_op_top;
 wire state_op_term;
 assign state_op_term = ~|(state_op_cnt ^ state_op_top); //state terminate after state_op_cnt == state_op_top.
-assign spi_begin_term = |((state_op_cnt+8'h1) ^ state_op_top); //state terminate after state_op_cnt == state_op_top.
+assign spi_begin_term = |(state_op_cnt_next ^ state_op_top); //state terminate after state_op_cnt == state_op_top.
 
 
 
@@ -370,7 +372,7 @@ always @(posedge clk or negedge rst_n) begin
                         load current transfer from sequence
                         set del_cnt if sequence has delay modifier.
                         */
-                        state_op_cnt <= state_op_cnt + 8'b1;//Only increment if not term yet;
+                        state_op_cnt <= state_op_cnt_next;//Only increment if not term yet;
                         spi_mosi_r <= {24'h0,lcd_init_routine_seq[state_op_cnt][7:0]};
                         spi_begin_r <= spi_begin_term;
                         lcd_data_cmd_r <= lcd_init_routine_seq[state_op_cnt][8];
@@ -405,7 +407,7 @@ always @(posedge clk or negedge rst_n) begin
                         load current transfer from sequence
                         set del_cnt if sequence has delay modifier.
                         */
-                        state_op_cnt <= state_op_cnt + 8'b1;//Only increment if not term yet;
+                        state_op_cnt <= state_op_cnt_next;//Only increment if not term yet;
                         spi_mosi_r <= {24'h0,lcd_px_routine_seq[state_op_cnt][7:0]};
                         spi_begin_r <= spi_begin_term;
                         lcd_data_cmd_r <= lcd_px_routine_seq[state_op_cnt][8];
@@ -440,7 +442,7 @@ always @(posedge clk or negedge rst_n) begin
                     spi_wide_r <= 1'b1;
                     spi_begin_r <= 1'b0;
                     spi_cs_r <= state_op_term;
-                    state_op_cnt <= state_op_cnt + 8'h1;
+                    state_op_cnt <= state_op_cnt_next;
                     stream_busy_r <= 1'b1;
                 end else begin
                     //state routine

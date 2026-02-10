@@ -4,9 +4,9 @@
 //`define TEST_CTL_IF
 //`define TEST_LCD_IF_PX_SEQ
 `define TEST_LCD_IF_INIT_SEQ
-`define TEST_LCD_IF_STREAM_512B
+//`define TEST_LCD_IF_STREAM_512B
 
-//`define DISABLE_DELAY
+`define DISABLE_DELAY
 module tb;
 /*
 uart_front test bench:
