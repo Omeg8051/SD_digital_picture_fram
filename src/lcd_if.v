@@ -127,6 +127,7 @@ module lcd_if (
     input init,             //initialize LCD
     input px_stream_cmd,    //transmit pixel commands
     input stream_512B,      //stream 512 bytes at 4 bytes each stream trigger
+    input end_of_frame,      //pull high when initiating the last block transfer.
     //input [4:0]img_id,      //max image count is 32 for a minimum 4GiB card
 
     //flow control
@@ -203,7 +204,7 @@ assign lcd_cmd_del_cnt_nz = |lcd_cmd_del_cnt;
 //encoding scheme:
 //{x,delay_250_ms,delay_50ms,command_is_data,payload[7:0]}
 reg [11:0]lcd_px_routine_seq[10:0];
-reg [11:0]lcd_init_routine_seq[50:0];
+reg [11:0]lcd_init_routine_seq[49:0];
 
 always @(negedge rst_n ) begin
     lcd_px_routine_seq[0] <= {4'h0,8'h2A};
@@ -268,7 +269,6 @@ always @(negedge rst_n ) begin
     lcd_init_routine_seq[47] <= {4'h1,	8'h01};
     lcd_init_routine_seq[48] <= {4'h2,	8'h11};
     lcd_init_routine_seq[49] <= {4'h4,	8'h29};
-    lcd_init_routine_seq[50] <= {4'h4,	8'h00};
 
 end
 
@@ -279,6 +279,7 @@ reg if_begin_r;
 reg [31:0]stream_data_r;
 reg stream_trigger_r;
 reg stream_busy_r;
+reg end_of_frame_r;
 assign stream_busy = stream_busy_r;
 //reg spi_miso_r;
 reg spi_busy_r;
@@ -291,11 +292,13 @@ always @(posedge clk) begin
     stream_trigger_r <= stream_trigger;
     //spi_miso_r <= spi_miso;
     spi_busy_r <= spi_busy;
-    //blk_index <= img_id * 300;//implement with faster sum of shifts and padd with 0 later.
+    end_of_frame_r <= end_of_frame;
 end
 
 //reg if_busy_r;
 assign if_busy = |(lcd_state ^ LCD_STATE_idle);
+
+reg last_frame_r;
 
 /*
 state transition beyond this point.
@@ -306,7 +309,7 @@ always @(posedge clk or negedge rst_n) begin
         strm_data_r     <=  32'h0;
         state_op_cnt    <=  6'h0;
         state_op_top    <=  6'h0;
-        //if_busy_r       <=  1'b0;
+        last_frame_r    <=  1'b0;
         spi_cs_r        <=  1'b1;
         spi_begin_r     <=  1'b0;
         spi_wide_r      <=  1'b0;
@@ -318,11 +321,10 @@ always @(posedge clk or negedge rst_n) begin
             LCD_STATE_idle: begin
                 if(if_begin_r)begin
                     spi_cs_r        <= 1'b0; //transfer to active state always asserts chip select
-                    state_op_cnt    <= 8'b0;
-
                     case (lcd_op_bits_r)
                         LCD_OP_BITS_init : begin
                             lcd_state <= LCD_STATE_init;
+                            state_op_cnt    <= 8'b0;
                             state_op_top <= 8'd51;
                             spi_cs_r        <=  1'b0;
                             spi_begin_r     <=  1'b0;
@@ -330,15 +332,19 @@ always @(posedge clk or negedge rst_n) begin
                         end
                         LCD_OP_BITS_px_cmd : begin
                             lcd_state <= LCD_STATE_send_px;
-                            state_op_top <= 8'd11;
+                            state_op_cnt    <= 8'b0;
+                            state_op_top <= 8'd12;
                             spi_cs_r        <=  1'b0;
                             spi_begin_r     <=  1'b0;
                             spi_wide_r      <=  1'b0;
                         end
                         LCD_OP_BITS_stream : begin
                             lcd_state <= LCD_STATE_wait_stream;
+                            state_op_cnt    <= 8'b0;
                             state_op_top <= 8'd128;//128 transfer for 4B each
                             lcd_data_cmd_r  <=  1'b1;
+                            spi_cs_r        <=  1'b0;
+                            last_frame_r    <=  end_of_frame_r;
                         end 
                         default: begin
                             lcd_state <= LCD_STATE_idle;
@@ -441,7 +447,7 @@ always @(posedge clk or negedge rst_n) begin
                     spi_mosi_r <= stream_data_r;
                     spi_wide_r <= 1'b1;
                     spi_begin_r <= 1'b0;
-                    spi_cs_r <= state_op_term;
+                    spi_cs_r <= state_op_term & last_frame_r;//end of spi cs depends on if it is the last fram or not
                     state_op_cnt <= state_op_cnt_next;
                     stream_busy_r <= 1'b1;
                     lcd_data_cmd_r <= ~state_op_term;

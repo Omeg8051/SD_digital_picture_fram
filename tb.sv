@@ -5,6 +5,7 @@
 //`define TEST_LCD_IF_PX_SEQ
 //`define TEST_LCD_IF_INIT_SEQ
 `define TEST_LCD_IF_STREAM_512B
+//`define TEST_LCD_IF_STREAM_512B_END
 
 `define DISABLE_DELAY
 module tb;
@@ -365,6 +366,7 @@ lcd_if dut_if(
     .init(lcd_init),             //initialize LCD
     .px_stream_cmd(lcd_px),    //transmit pixel commands
     .stream_512B(lcd_stream),      //stream 512 bytes at 4 bytes each stream trigger
+    .end_of_frame(1'b0),      //pull high when initiating the last block transfer.
 
     //flow control
     .if_begin(lcd_begin),
@@ -458,6 +460,7 @@ lcd_if dut_if(
     .init(lcd_init),             //initialize LCD
     .px_stream_cmd(lcd_px),    //transmit pixel commands
     .stream_512B(lcd_stream),      //stream 512 bytes at 4 bytes each stream trigger
+    .end_of_frame(1'b0),      //pull high when initiating the last block transfer.
 
     //flow control
     .if_begin(lcd_begin),
@@ -562,7 +565,11 @@ lcd_if dut_if(
     .init(lcd_init),             //initialize LCD
     .px_stream_cmd(lcd_px),    //transmit pixel commands
     .stream_512B(lcd_stream),      //stream 512 bytes at 4 bytes each stream trigger
-
+`ifdef TEST_LCD_IF_STREAM_512B_END
+    .end_of_frame(1'b1),      //pull high when initiating the last block transfer.
+`else
+    .end_of_frame(1'b0),      //pull high when initiating the last block transfer.
+`endif
     //flow control
     .if_begin(lcd_begin),
     .if_busy(lcd_busy),
