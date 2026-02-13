@@ -8,6 +8,7 @@
 //`define TEST_LCD_IF_STREAM_512B_END
 //`define TEST_SD_IF_RD_BLK
 `define TEST_SD_IF_STRM_512B
+`define TEST_SD_IF_STRM_512B_COOP
 
 `define DISABLE_DELAY
 module tb;
@@ -309,12 +310,11 @@ reg lcd_begin;
 wire spi_phy_begin;
 wire spi_phy_busy;
 wire spi_phy_wide;
-wire spi_cs;
+wire spi_bus_cs;
 wire [31:0]spi_phy_mosi;
 
 wire spi_mosi;
 wire spi_phy_clk;
-wire spi_phy_cs;
 wire lcd_data_cmd;
 
 initial begin
@@ -388,7 +388,7 @@ lcd_if dut_if(
     .spi_begin(spi_phy_begin),
     .spi_wide(spi_phy_wide),
     .spi_busy(spi_phy_busy),
-    .spi_cs(spi_cs)
+    .spi_cs(spi_bus_cs)
 );
 
 `elsif TEST_LCD_IF_INIT_SEQ
@@ -403,12 +403,11 @@ reg lcd_begin;
 wire spi_phy_begin;
 wire spi_phy_busy;
 wire spi_phy_wide;
-wire spi_cs;
+wire spi_bus_cs;
 wire [31:0]spi_phy_mosi;
 
 wire spi_mosi;
 wire spi_phy_clk;
-wire spi_phy_cs;
 wire lcd_data_cmd;
 
 initial begin
@@ -482,7 +481,7 @@ lcd_if dut_if(
     .spi_begin(spi_phy_begin),
     .spi_wide(spi_phy_wide),
     .spi_busy(spi_phy_busy),
-    .spi_cs(spi_cs)
+    .spi_cs(spi_bus_cs)
 );
 
 
@@ -619,7 +618,6 @@ wire [31:0]spi_phy_miso;
 
 wire spi_bus_mosi;
 wire spi_bus_clk;
-wire spi_phy_cs;
 wire lcd_data_cmd;
 
 initial begin
@@ -732,8 +730,7 @@ wire [31:0]spi_phy_miso;
 
 wire spi_bus_mosi;
 wire spi_bus_clk;
-wire spi_phy_cs;
-wire lcd_data_cmd;
+wire stream_busy;
 
 initial begin
     forever begin
@@ -789,6 +786,7 @@ spi_front dut_phy(
     //control interface
     .spi_begin(spi_phy_begin),
     .spi_wide(spi_phy_wide),
+    //.spi_wide(1'b0),
     .spi_busy(spi_phy_busy)
 );
 
@@ -810,7 +808,12 @@ sd_if dut_if(
     //data stream
     /*output [31:0]*/.stream_data(stream_data),
     /*output */.stream_trigger(stream_trigger),
-    /*input */.stream_busy(1'b0),
+`ifdef TEST_SD_IF_STRM_512B_COOP
+    .stream_busy(stream_busy),      //pull high when initiating the last block transfer.
+`else
+    .stream_busy(1'b0),      //pull high when initiating the last block transfer.
+`endif
+
 
     //spi phy
     /*output [31:0]*/.spi_mosi(spi_phy_mosi),
@@ -820,6 +823,78 @@ sd_if dut_if(
     /*output */.spi_wide(spi_phy_wide),
     /*output */.spi_cs(spi_bus_cs)
 );
+
+`ifdef TEST_SD_IF_STRM_512B_COOP
+wire spi_phy1_begin;
+wire spi_phy1_busy;
+wire spi_phy1_wide;
+wire spi_bus1_cs;
+wire [31:0]spi_phy1_mosi;
+wire [31:0]spi_phy1_miso;
+
+wire spi_bus1_mosi;
+wire spi_bus1_clk;
+wire lcd_data_cmd;
+
+wire lcd_busy;
+
+lcd_if dut_if1(
+    .clk(clk),
+    .rst_n(rst_n),
+    
+    //actions
+    .init(1'b0),             //initialize LCD
+    .px_stream_cmd(1'b0),    //transmit pixel commands
+    .stream_512B(sd_stream),      //stream 512 bytes at 4 bytes each stream trigger
+    .end_of_frame(1'b0),      //pull high when initiating the last block transfer.
+
+    //flow control
+    .if_begin(sd_begin),
+    .if_busy(lcd_busy),
+
+    //data stream
+    .stream_data(stream_data),
+    .stream_trigger(stream_trigger),
+    .stream_busy(stream_busy),
+
+    //lcd control pin
+    .lcd_data_cmd(lcd_data_cmd),
+
+    //spi phy
+    .spi_mosi(spi_phy1_mosi),
+    //input [31:0]spi_miso, This IF output only. No read back
+    .spi_begin(spi_phy1_begin),
+    .spi_wide(spi_phy1_wide),
+    .spi_busy(spi_phy1_busy),
+    .spi_cs(spi_bus1_cs)
+);
+
+spi_front dut_phy1(
+    .spi_clk_in(clk),
+    .rst_n(rst_n),
+
+    //spi interface
+    .spi_clk_o(spi_bus1_clk),
+    //output.spi_clk_t(),
+    .spi_mosi_o(spi_bus1_mosi),
+    //output.spi_mosi_t(),
+    .spi_miso_i(spi_bus1_miso),
+
+    //data interface
+    .data_mosi(spi_phy1_mosi),
+    //.data_miso(spi_phy1_miso),
+
+    //control interface
+    .spi_begin(spi_phy1_begin),
+    .spi_wide(spi_phy1_wide),
+    //.spi_wide(1'b0),
+    .spi_busy(spi_phy1_busy)
+);
+
+
+`endif
+
+
 
 `else
     initial begin

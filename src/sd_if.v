@@ -255,7 +255,7 @@ always @(posedge clk or negedge rst_n) begin
                 
             end
             SD_STATE_strm_512_aquire : begin
-                if(state_op_term & stream_busy_r & stream_trigger_r) begin
+                if(state_op_term) begin
                     sd_state <= SD_STATE_rm_crc;
                     state_op_top <= SD_OP_TOP_rm_crc;
                     state_op_cnt <= 10'b0;
@@ -264,7 +264,6 @@ always @(posedge clk or negedge rst_n) begin
                 end else if(~spi_busy_r & ~spi_begin_r) begin
                     
                     spi_begin_r <= ~state_op_term;
-                    stream_trigger_r <= 1'b0;
                 end else if(spi_busy_r & spi_begin_r) begin
                     sd_state <= SD_STATE_strm_512_trig;
                     spi_begin_r <= 1'b0;
@@ -273,12 +272,13 @@ always @(posedge clk or negedge rst_n) begin
                 
             end
             SD_STATE_strm_512_trig : begin
-                if(~spi_busy_r & ~stream_busy_r) begin
+                if(~spi_busy_r) begin
                     sd_state <= SD_STATE_strm_512_aquire;
                     state_op_cnt <= state_op_cnt_next;
                     stream_data_r <= spi_miso_r;
                     stream_trigger_r <= 1'b1;
                 end else begin
+                    stream_trigger_r <= 1'b0;
                     
                 end
                 

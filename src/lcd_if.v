@@ -173,7 +173,7 @@ assign lcd_op_bits = {stream_512B,px_stream_cmd,init};
 
 reg [2:0]lcd_state;
 reg [2:0]lcd_op_bits_r;
-reg [31:0]strm_data_r;
+reg [31:0]stream_data_r;
 reg [7:0]state_op_cnt;
 wire [7:0]state_op_cnt_next;
 assign state_op_cnt_next = state_op_cnt + 8'h1;
@@ -276,7 +276,6 @@ end
 input sample block
 */
 reg if_begin_r;
-reg [31:0]stream_data_r;
 reg stream_trigger_r;
 reg stream_busy_r;
 reg end_of_frame_r;
@@ -306,7 +305,7 @@ state transition beyond this point.
 always @(posedge clk or negedge rst_n) begin
     if(~rst_n)begin
         lcd_state       <=  3'h0;
-        strm_data_r     <=  32'h0;
+        stream_data_r     <=  32'h0;
         state_op_cnt    <=  6'h0;
         state_op_top    <=  6'h0;
         last_frame_r    <=  1'b0;
@@ -316,6 +315,7 @@ always @(posedge clk or negedge rst_n) begin
         lcd_data_cmd_r  <=  1'b0;
         lcd_cmd_del_cnt <=  20'h0;
         spi_mosi_r      <= 32'h0;
+        stream_busy_r <= 1'b0;
     end else begin
         case (lcd_state)
             LCD_STATE_idle: begin
@@ -442,37 +442,35 @@ always @(posedge clk or negedge rst_n) begin
             end
             LCD_STATE_wait_stream: begin
                 if(~spi_busy_r & stream_trigger_r)begin
-                    lcd_state <= state_op_term? LCD_STATE_idle : LCD_STATE_tx_4B;
                     //setup for next state
                     spi_mosi_r <= stream_data_r;
                     spi_wide_r <= 1'b1;
-                    spi_begin_r <= 1'b0;
                     spi_cs_r <= state_op_term & last_frame_r;//end of spi cs depends on if it is the last fram or not
-                    state_op_cnt <= state_op_cnt_next;
                     stream_busy_r <= 1'b1;
-                    lcd_data_cmd_r <= ~state_op_term;
-                end else begin
+                    //trigger transfer
+                    spi_begin_r <= 1'b1;    
+                end else if(spi_busy_r & spi_begin_r) begin
                     //state routine
-
+                    lcd_state <= state_op_term? LCD_STATE_idle : LCD_STATE_tx_4B;
+                    state_op_cnt <= state_op_cnt_next;
+                    //retract trigger
+                    spi_begin_r <= 1'b0;  
+                    
                 end
             end
             LCD_STATE_tx_4B: begin
-                if(spi_busy_r)begin
+                if(~spi_busy_r)begin
                     lcd_state <= LCD_STATE_wait_stream;
-                    //retract trigger
-                    spi_begin_r <= 1'b0;  
                     //setup for next state
                     stream_busy_r <= 1'b0;
                 end else begin
                     //state routine
-                    //trigger transfer
-                    spi_begin_r <= 1'b1;    
                     
                 end
             end
             default: begin
                 lcd_state       <=  3'h0;
-                strm_data_r     <=  32'h0;
+                stream_data_r     <=  32'h0;
                 state_op_cnt    <=  8'h0;
                 state_op_top    <=  8'h0;
                 spi_cs_r        <= 1'b1;
