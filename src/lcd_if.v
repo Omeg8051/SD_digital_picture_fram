@@ -305,7 +305,6 @@ state transition beyond this point.
 always @(posedge clk or negedge rst_n) begin
     if(~rst_n)begin
         lcd_state       <=  3'h0;
-        stream_data_r     <=  32'h0;
         state_op_cnt    <=  6'h0;
         state_op_top    <=  6'h0;
         last_frame_r    <=  1'b0;
