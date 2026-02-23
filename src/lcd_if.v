@@ -469,7 +469,6 @@ always @(posedge clk or negedge rst_n) begin
             end
             default: begin
                 lcd_state       <=  3'h0;
-                stream_data_r     <=  32'h0;
                 state_op_cnt    <=  8'h0;
                 state_op_top    <=  8'h0;
                 spi_cs_r        <= 1'b1;
