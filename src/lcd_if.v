@@ -440,17 +440,25 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             LCD_STATE_wait_stream: begin
-                if(~spi_busy_r & stream_trigger_r)begin
+                /*if(state_op_term & ~spi_busy_r)begin
+                    //setup for next state
+                    lcd_state <= LCD_STATE_tx_4B;
+                    spi_mosi_r <= stream_data_r;
+                    spi_wide_r <= 1'b1;
+                    spi_cs_r <= last_frame_r;//end of spi cs depends on if it is the last fram or not
+                    //trigger transfer
+                    spi_begin_r <= 1'b0;    
+                end else */if(~spi_busy_r & stream_trigger_r)begin
                     //setup for next state
                     spi_mosi_r <= stream_data_r;
                     spi_wide_r <= 1'b1;
-                    spi_cs_r <= state_op_term & last_frame_r;//end of spi cs depends on if it is the last fram or not
+                    spi_cs_r <= last_frame_r;//end of spi cs depends on if it is the last fram or not
                     stream_busy_r <= 1'b1;
                     //trigger transfer
                     spi_begin_r <= 1'b1;    
                 end else if(spi_busy_r & spi_begin_r) begin
                     //state routine
-                    lcd_state <= state_op_term? LCD_STATE_idle : LCD_STATE_tx_4B;
+                    lcd_state <= LCD_STATE_tx_4B;
                     state_op_cnt <= state_op_cnt_next;
                     //retract trigger
                     spi_begin_r <= 1'b0;  
@@ -459,7 +467,7 @@ always @(posedge clk or negedge rst_n) begin
             end
             LCD_STATE_tx_4B: begin
                 if(~spi_busy_r)begin
-                    lcd_state <= LCD_STATE_wait_stream;
+                    lcd_state <= state_op_term ? LCD_STATE_idle : LCD_STATE_wait_stream;
                     //setup for next state
                     stream_busy_r <= 1'b0;
                 end else begin
