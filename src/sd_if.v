@@ -43,14 +43,13 @@ localparam SD_STATE_rm_crc = 4'hA;
 localparam SD_OP_BITS_init = 3'b001;
 localparam SD_OP_BITS_px_cmd = 3'b010;
 localparam SD_OP_BITS_stream = 3'b100;
-localparam SD_OP_BITS_rm_crc = 3'b000;
 
 
 wire [2:0]sd_op_bits;
 reg [2:0]sd_op_bits_r;
 assign sd_op_bits = {stream_512B,read_cmd,init};
 
-reg [3:0]sd_state;
+(* dont_touch = "true" *)reg [3:0]sd_state;
 
 reg [9:0]state_op_cnt;
 wire [9:0]state_op_cnt_next;
@@ -62,14 +61,14 @@ assign state_op_term = ~|(state_op_cnt ^ state_op_top); //state terminate after 
 wire spi_begin_term;
 assign spi_begin_term = |(state_op_cnt_next ^ state_op_top); //state terminate after 
 
-localparam SD_OP_TOP_init_80_c = 10'd10;
+localparam SD_OP_TOP_init_80_c = 10'd20;
 localparam SD_OP_TOP_init_seq = 10'd18;//cmd0 + 1B resp + cmd8 + 1B resp + 4B status
 localparam SD_OP_TOP_init_poll = 10'd1023;//(cmd55 + 1B resp + acmd41 + 1B resp) * 64
 localparam SD_OP_TOP_send_rd_blk = 10'd7;//cmd17 + 1B resp
 localparam SD_OP_TOP_data_token = 10'd1023;//< 1024B read till FEh
 localparam SD_OP_TOP_strm_512_aquire = 10'd128;
 localparam SD_OP_TOP_strm_512_trig = 10'd128;
-localparam SD_OP_TOP_rm_crc = 10'd2;//2B read(FFh)
+localparam SD_OP_TOP_rm_crc = 10'd4;//2B read(FFh)
 
 //sequence record
 reg [9:0]rd_blk_seq[7:0];//{hold_on_FFh,data_from_var,data[7:0]};
@@ -200,6 +199,7 @@ always @(posedge clk or negedge rst_n) begin
                             sd_state <= SD_STATE_strm_512_aquire;
                             state_op_top <= SD_OP_TOP_strm_512_aquire;
                             spi_wide_r <= 1'b1;
+                            spi_mosi_r <=   {32'hFFFFFFFF};
                         end
                         default: begin
                             sd_state <= SD_STATE_idle;
@@ -340,7 +340,7 @@ always @(posedge clk or negedge rst_n) begin
                 
             end
             SD_STATE_rm_crc  : begin
-                if(state_op_term) begin
+                if(state_op_term & ~spi_busy_r) begin
                     sd_state <= SD_STATE_idle;
                     blk_off_r <= end_of_frame_r ? 9'h0 : (blk_off_r + 9'h1);
                     spi_begin_r <= 1'b0;
