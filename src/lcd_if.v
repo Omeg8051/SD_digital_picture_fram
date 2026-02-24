@@ -47,11 +47,11 @@ localparam LCD_CMD_DEL_250MS_COUNT = 20'd250000;//assuming 1MHz clk
 localparam LCD_CMD_DEL_50MS_COUNT = 20'd5000;//assuming 1MHz clk
 
 
-(* dont_touch = "true" *)wire [2:0]lcd_op_bits;
+wire [2:0]lcd_op_bits;
 assign lcd_op_bits = {stream_512B,px_stream_cmd,init};
 
 
-(* dont_touch = "true" *)reg [2:0]lcd_state;
+reg [2:0]lcd_state;
 reg [2:0]lcd_op_bits_r;
 reg [31:0]stream_data_r;
 reg [7:0]state_op_cnt;

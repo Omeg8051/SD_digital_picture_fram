@@ -49,7 +49,7 @@ wire [2:0]sd_op_bits;
 reg [2:0]sd_op_bits_r;
 assign sd_op_bits = {stream_512B,read_cmd,init};
 
-(* dont_touch = "true" *)reg [3:0]sd_state;
+reg [3:0]sd_state;
 
 reg [9:0]state_op_cnt;
 wire [9:0]state_op_cnt_next;
