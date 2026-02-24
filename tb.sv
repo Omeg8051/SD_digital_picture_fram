@@ -6,9 +6,10 @@
 //`define TEST_LCD_IF_INIT_SEQ
 //`define TEST_LCD_IF_STREAM_512B
 //`define TEST_LCD_IF_STREAM_512B_END
-//`define TEST_SD_IF_RD_BLK
-`define TEST_SD_IF_STRM_512B
-`define TEST_SD_IF_STRM_512B_COOP
+`define TEST_SD_IF_RD_BLK
+//`define TEST_SD_IF_STRM_512B
+//`define TEST_SD_IF_STRM_512B_COOP
+//`define TEST_SD_IF_INIT
 
 `define DISABLE_DELAY
 module tb;
@@ -505,9 +506,9 @@ wire spi_phy_wide;
 wire spi_cs;
 wire [31:0]spi_phy_mosi;
 
-wire spi_mosi;
-wire spi_phy_clk;
-wire spi_phy_cs;
+wire spi_bus_mosi;
+wire spi_bus_clk;
+wire spi_bus_cs;
 wire lcd_data_cmd;
 
 initial begin
@@ -522,7 +523,7 @@ initial begin
     $dumpvars(0);
 end
 
-always @(posedge spi_phy_clk) begin
+always @(posedge spi_bus_clk) begin
     spi_bit_cnt <= spi_bit_cnt + 32'h1;
 end
 
@@ -542,9 +543,9 @@ spi_front dut_phy(
     .rst_n(rst_n),
 
     //spi interface
-    .spi_clk_o(spi_phy_clk),
+    .spi_clk_o(spi_bus_clk),
     //output.spi_clk_t(),
-    .spi_mosi_o(spi_mosi),
+    .spi_mosi_o(spi_bus_mosi),
     //output.spi_mosi_t(),
     .spi_miso_i(1'b1),
 
@@ -589,7 +590,7 @@ lcd_if dut_if(
     .spi_begin(spi_phy_begin),
     .spi_wide(spi_phy_wide),
     .spi_busy(spi_phy_busy),
-    .spi_cs(spi_cs)
+    .spi_cs(spi_bus_cs)
 );
 
 `elsif TEST_SD_IF_RD_BLK
@@ -599,7 +600,6 @@ reg sd_init;
 reg sd_px;
 reg sd_stream;
 reg sd_rd_blk;
-reg sd_rm_crc;
 wire sd_busy;
 reg sd_begin;
 reg [3:0]sd_img_id;
@@ -638,7 +638,7 @@ end
 
 initial begin
     spi_bit_cnt <= 32'h0;
-    clk = 1'b0; rst_n = 1'b1; sd_init = 1'b0; sd_rd_blk = 1'b0; sd_stream = 1'b0; sd_rm_crc = 1'b0; sd_begin = 1'b0; spi_bus_miso = 1'b1;
+    clk = 1'b0; rst_n = 1'b1; sd_init = 1'b0; sd_rd_blk = 1'b0; sd_stream = 1'b0; sd_begin = 1'b0; spi_bus_miso = 1'b1;
 
     #100 rst_n = 1'b0; sd_img_id = 4'h0;
     #100 rst_n = 1'b1; sd_rd_blk = 1'b1;
@@ -682,7 +682,6 @@ sd_if dut_if(
     /*input */.init(sd_init),         //init SD card
     /*input */.read_cmd(sd_rd_blk),     //send read command for blk_addr
     /*input */.stream_512B(sd_stream),   //stream 512 bytes at 4 bytes each stream trigger
-    /*input */.rm_crc(sd_rm_crc),       //read 2 bytes of trailing CRC
 
     //flow control
     /*input [3:0]*/.img_id(sd_img_id),
@@ -711,7 +710,6 @@ reg sd_init;
 reg sd_px;
 reg sd_stream;
 reg sd_rd_blk;
-reg sd_rm_crc;
 wire sd_busy;
 reg sd_begin;
 reg [3:0]sd_img_id;
@@ -750,7 +748,7 @@ end
 
 initial begin
     spi_bit_cnt <= 32'h0;
-    clk = 1'b0; rst_n = 1'b1; sd_init = 1'b0; sd_rd_blk = 1'b0; sd_stream = 1'b0; sd_rm_crc = 1'b0; sd_begin = 1'b0; spi_bus_miso = 1'b1;
+    clk = 1'b0; rst_n = 1'b1; sd_init = 1'b0; sd_rd_blk = 1'b0; sd_stream = 1'b0; sd_begin = 1'b0; spi_bus_miso = 1'b1;
 
     #100 rst_n = 1'b0; sd_img_id = 4'h0;
     #100 rst_n = 1'b1; sd_stream = 1'b1;
@@ -798,7 +796,6 @@ sd_if dut_if(
     /*input */.init(sd_init),         //init SD card
     /*input */.read_cmd(sd_rd_blk),     //send read command for blk_addr
     /*input */.stream_512B(sd_stream),   //stream 512 bytes at 4 bytes each stream trigger
-    /*input */.rm_crc(sd_rm_crc),       //read 2 bytes of trailing CRC
 
     //flow control
     /*input [3:0]*/.img_id(sd_img_id),
@@ -894,6 +891,130 @@ spi_front dut_phy1(
 
 `endif
 
+
+`elsif TEST_SD_IF_INIT
+reg clk;
+reg rst_n;
+reg sd_init;
+reg sd_px;
+reg sd_stream;
+reg sd_rd_blk;
+wire sd_busy;
+reg sd_begin;
+reg [3:0]sd_img_id;
+
+reg [31:0]spi_bit_cnt;
+reg spi_bus_miso;
+
+wire spi_phy_begin;
+wire spi_phy_busy;
+wire stream_trigger;
+wire spi_phy_wide;
+wire spi_bus_cs;
+wire [31:0]stream_data;
+wire [31:0]spi_phy_mosi;
+wire [31:0]spi_phy_miso;
+
+wire spi_bus_mosi;
+wire spi_bus_clk;
+wire stream_busy;
+
+initial begin
+    forever begin
+        #5 clk = ~clk;
+    end
+end
+
+initial begin
+    $display("===================\nTesting: sd_if_init_sequence.\n===================\n");
+    $dumpfile("dump.vcd");
+    $dumpvars(0);
+end
+
+always @(posedge spi_bus_clk) begin
+    spi_bit_cnt <= spi_bit_cnt + 32'h1;
+end
+
+initial begin
+    spi_bit_cnt <= 32'h0;
+    clk = 1'b0; rst_n = 1'b1; sd_init = 1'b0; sd_rd_blk = 1'b0; sd_stream = 1'b0; sd_begin = 1'b0; spi_bus_miso = 1'b1;
+
+    #100 rst_n = 1'b0; sd_img_id = 4'h0;
+    #100 rst_n = 1'b1; sd_init = 1'b1;
+
+    #100 sd_begin = 1'b1;
+    #10 sd_begin = 1'b0;
+
+    
+    #1910 spi_bus_miso = 1'b0;
+    #30 spi_bus_miso = 1'b1;
+
+    #1129 spi_bus_miso = 1'b0;
+    #30 spi_bus_miso = 1'b1;
+
+    #1510 spi_bus_miso = 1'b0;
+    #30 spi_bus_miso = 1'b1;
+
+    #1510 spi_bus_miso = 1'b0;
+    #30 spi_bus_miso = 1'b1;
+
+    #1334 spi_bus_miso = 1'b0;
+    #98 spi_bus_miso = 1'b1;
+    /**/
+    #150 $finish();
+end
+
+spi_front dut_phy(
+    .spi_clk_in(clk),
+    .rst_n(rst_n),
+
+    //spi interface
+    .spi_clk_o(spi_bus_clk),
+    //output.spi_clk_t(),
+    .spi_mosi_o(spi_bus_mosi),
+    //output.spi_mosi_t(),
+    .spi_miso_i(spi_bus_miso),
+
+    //data interface
+    .data_mosi(spi_phy_mosi),
+    .data_miso(spi_phy_miso),
+
+    //control interface
+    .spi_begin(spi_phy_begin),
+    .spi_wide(spi_phy_wide),
+    //.spi_wide(1'b0),
+    .spi_busy(spi_phy_busy)
+);
+
+sd_if dut_if(
+    /*input */.clk(clk),
+    /*input */.rst_n(rst_n),
+    
+    //actions
+    /*input */.init(sd_init),         //init SD card
+    /*input */.read_cmd(sd_rd_blk),     //send read command for blk_addr
+    /*input */.stream_512B(sd_stream),   //stream 512 bytes at 4 bytes each stream trigger
+
+    //flow control
+    /*input [3:0]*/.img_id(sd_img_id),
+    /*input */.if_begin(sd_begin),
+    /*output */.if_busy(sd_busy),
+
+    //data stream
+    /*output [31:0]*/.stream_data(stream_data),
+    /*output */.stream_trigger(stream_trigger),
+
+    .stream_busy(1'b0),      //pull high when initiating the last block transfer.
+
+
+    //spi phy
+    /*output [31:0]*/.spi_mosi(spi_phy_mosi),
+    /*input [31:0]*/.spi_miso(spi_phy_miso),
+    /*output */.spi_begin(spi_phy_begin),
+    /*input */.spi_busy(spi_phy_busy),
+    /*output */.spi_wide(spi_phy_wide),
+    /*output */.spi_cs(spi_bus_cs)
+);
 
 
 `else
