@@ -1,124 +1,4 @@
-/*cmd define
-`define ILI9341_CMD_NOP								8'h00
-`define ILI9341_CMD_SOFT_RST						8'h01
-//read 4 bytes afterward
-`define ILI9341_CMD_RD_DISP_ID						8'h04
-//read 5 bytes afterward
-`define ILI9341_CMD_RD_DISP_STAT					8'h09
-//read 2 bytes afterward
-`define ILI9341_CMD_RD_DISP_PMOD					8'h0A
-//read 2 bytes afterward
-`define ILI9341_CMD_RD_DISP_MADCTL					8'h0B
-//read 2 bytes afterward
-`define ILI9341_CMD_RD_DISP_PX_FMT					8'h0C
-//read 2 bytes afterward
-`define ILI9341_CMD_RD_DISP_IM_FMT					8'h0D
-//read 2 bytes afterward
-`define ILI9341_CMD_RD_DISP_SNG_MODE				8'h0E
-//read 2 bytes afterward
-`define ILI9341_CMD_SLF_DIAG_RESULT					8'h0F
 
-
-`define ILI9341_CMD_ENTER_SLP						8'h10
-`define ILI9341_CMD_EXIT_SLP						8'h11
-`define ILI9341_CMD_PARTIAL_MODE					8'h12
-`define ILI9341_CMD_NRM_DISP						8'h13
-
-
-`define ILI9341_CMD_DISP_INV_OFF					8'h20
-`define ILI9341_CMD_DISP_INV_ON						8'h21
-//write 1 byte afterward
-`define ILI9341_CMD_GAMMA_SET						8'h26
-`define ILI9341_CMD_DISP_OFF						8'h28
-`define ILI9341_CMD_DISP_ON							8'h29
-//write 4 bytes afterward {start_addr_MSB	start_addr_LSB	end_addr_MSB	end_addr_LSB}
-`define ILI9341_CMD_SET_CA							8'h2A
-//write 4 bytes afterward {start_addr_MSB	start_addr_LSB	end_addr_MSB	end_addr_LSB}
-`define ILI9341_CMD_SET_PA							8'h2B
-//write 3*PX bytes afterward
-`define ILI9341_CMD_WRITE_PX						8'h2C
-//write 9 bytes afterward
-//`define ILI9341_CMD_SET_COLOR						8'h2D
-//read 4 bytes afterward
-`define ILI9341_CMD_READ_PX							8'h2E
-
-
-//write 4 bytes afterward {start_addr_MSB	start_addr_LSB	end_addr_MSB	end_addr_LSB}
-`define ILI9341_CMD_SET_PARTIAL						8'h30
-//write 6 bytes afterward {TFA_MSB	TFA_LSB	TSA_MSB	TSA_LSB	BFA_MSB	BFA_LSB}
-`define ILI9341_CMD_V_SCROLL_DEF					8'h33
-`define ILI9341_CMD_TEAR_LINE_OFF					8'h34
-//write 1 byte afterward
-`define ILI9341_CMD_TEAR_LINE_ON					8'h35
-//write 1 byte afterward
-`define ILI9341_CMD_MEM_ACCESS_CTL					8'h36
-//write 2 bytes afterward {VSP_MSB	VSP_LSB}
-`define ILI9341_CMD_START_V_SCROLL					8'h37
-`define ILI9341_CMD_IDLE_OFF						8'h38
-`define ILI9341_CMD_IDLE_ON							8'h39
-//write 1 byte afterward
-`define ILI9341_CMD_SET_PX_FMT						8'h3A
-//write 3*PX bytes afterward
-//`define ILI9341_CMD_WRITE_PX_C					8'h3C
-//read 3*PX bytes afterward
-//`define ILI9341_CMD_READ_PX_C						8'h3E
-
-
-//write 2 bytes afterward
-`define ILI9341_CMD_SET_TEAR_LINE					8'h44
-//read 3 bytes afterward
-`define ILI9341_CMD_GET_TEAR_LINE					8'h45
-
-
-//write 1 byte afterward
-`define ILI9341_CMD_SET_DISP_BRIT_LVL				8'h51
-//read 2 bytes afterward
-`define ILI9341_CMD_GET_DISP_BRIT_LVL				8'h52
-//write 1 byte afterward
-`define ILI9341_CMD_SET_CTRL_DISP					8'h53
-//read 2 bytes afterward
-`define ILI9341_CMD_GET_CTRL_DISP					8'h54
-
-
-//ID
-//read 2 bytes afterward
-`define ILI9341_CMD_READ_ID_1						8'hDA
-//read 2 bytes afterward
-`define ILI9341_CMD_READ_ID_2						8'hDB
-//read 2 bytes afterward
-`define ILI9341_CMD_READ_ID_3						8'hDC
-//read 4 bytes afterward
-`define ILI9341_CMD_READ_ID_4						8'hDD
-
-
-//ext cmd
-//write 1 byte afterward
-`define ILI9341_CMD_RGB_IF_CTL						8'hB0
-//write 2 bytes afterward
-`define ILI9341_CMD_FRM_CTL_NRM						8'hB1
-//write 2 byte afterward
-`define ILI9341_CMD_FRM_CTL_IDLE					8'hB2
-//write 2 byte afterward
-`define ILI9341_CMD_FRM_CTL_PART					8'hB3
-//write 2 byte afterward
-`define ILI9341_CMD_DISP_INV_CTL					8'hB4
-//write 3 byte afterward
-`define ILI9341_CMD_SET_DISP_FUNC					8'hB6
-//write 1 byte afterward
-`define ILI9341_CMD_SET_ENTRY_MODE					8'hB7
-
-
-//write 1 byte afterward
-`define ILI9341_CMD_PWR_CTL_1						8'hC0
-//write 1 byte afterward
-`define ILI9341_CMD_PWR_CTL_2						8'hC1
-//write 2 byte afterward
-`define ILI9341_CMD_V_COM_CTL_1						8'hC5
-//write 2 byte afterward
-`define ILI9341_CMD_V_COM_CTL_2						8'hC7
-
-
-*/
 module lcd_if (
     input clk,
     input rst_n,
@@ -167,11 +47,11 @@ localparam LCD_CMD_DEL_250MS_COUNT = 20'd250000;//assuming 1MHz clk
 localparam LCD_CMD_DEL_50MS_COUNT = 20'd5000;//assuming 1MHz clk
 
 
-wire [2:0]lcd_op_bits;
+(* dont_touch = "true" *)wire [2:0]lcd_op_bits;
 assign lcd_op_bits = {stream_512B,px_stream_cmd,init};
 
 
-reg [2:0]lcd_state;
+(* dont_touch = "true" *)reg [2:0]lcd_state;
 reg [2:0]lcd_op_bits_r;
 reg [31:0]stream_data_r;
 reg [7:0]state_op_cnt;
