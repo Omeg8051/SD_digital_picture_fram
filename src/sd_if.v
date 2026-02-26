@@ -68,7 +68,7 @@ localparam SD_OP_TOP_send_rd_blk = 10'd7;//cmd17 + 1B resp
 localparam SD_OP_TOP_data_token = 10'd1023;//< 1024B read till FEh
 localparam SD_OP_TOP_strm_512_aquire = 10'd128;
 localparam SD_OP_TOP_strm_512_trig = 10'd128;
-localparam SD_OP_TOP_rm_crc = 10'd4;//2B read(FFh)
+localparam SD_OP_TOP_rm_crc = 10'd2;//2B read(FFh)
 
 //sequence record
 reg [9:0]rd_blk_seq[7:0];//{hold_on_FFh,data_from_var,data[7:0]};
