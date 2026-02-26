@@ -5,7 +5,7 @@ module d_pic_f (
     input rst_n,
 
     //SD if port
-    output [3:0]SD_if_im_idx;
+    output [3:0]SD_if_im_idx,
     output SD_if_init,
     output SD_if_send_rd_cmd,
     output SD_if_stream,
@@ -151,18 +151,18 @@ reg LCD_if_end_of_frame_r;
 reg LCD_if_begin_r;
 reg ctl_ready_r;
 
-assign SD_if_im_idx = SD_if_im_idx_r
-assign SD_if_init = SD_if_init_r
-assign SD_if_send_rd_cmd = SD_if_send_rd_cmd_r
-assign SD_if_stream = SD_if_stream_r
-assign SD_if_end_of_frame = SD_if_end_of_frame_r
-assign SD_if_begin = SD_if_begin_r
-assign LCD_if_init = LCD_if_init_r
-assign LCD_if_send_px_cmd = LCD_if_send_px_cmd_r
-assign LCD_if_stream = LCD_if_stream_r
-assign LCD_if_end_of_frame = LCD_if_end_of_frame_r
-assign LCD_if_begin = LCD_if_begin_r
-assign ctl_ready = ctl_ready_r
+assign SD_if_im_idx = SD_if_im_idx_r;
+assign SD_if_init = SD_if_init_r;
+assign SD_if_send_rd_cmd = SD_if_send_rd_cmd_r;
+assign SD_if_stream = SD_if_stream_r;
+assign SD_if_end_of_frame = SD_if_end_of_frame_r;
+assign SD_if_begin = SD_if_begin_r;
+assign LCD_if_init = LCD_if_init_r;
+assign LCD_if_send_px_cmd = LCD_if_send_px_cmd_r;
+assign LCD_if_stream = LCD_if_stream_r;
+assign LCD_if_end_of_frame = LCD_if_end_of_frame_r;
+assign LCD_if_begin = LCD_if_begin_r;
+assign ctl_ready = ctl_ready_r;
 //sys busy led driver
 assign sys_wait_led = ~|(pic_state ^ PIC_STATE_wait_uart);
 
@@ -191,10 +191,10 @@ wire [3:0] im_idx_incr;
 assign im_idx_incr = SD_if_im_idx_r + 4'h1;
 
 wire if_busy;
-assign if_busy <= SD_if_busy_r | LCD_if_busy_r;
+assign if_busy = SD_if_busy_r | LCD_if_busy_r;
 
 wire if_begin;
-assign if_begin <= SD_if_begin_r | LCD_if_begin_r;
+assign if_begin = SD_if_begin_r | LCD_if_begin_r;
 
 always @(posedge clk_4M ) begin
 
@@ -242,9 +242,9 @@ always @(posedge clk_4M or negedge rst_n) begin
                     pic_state <= PIC_STATE_sd_lcd_cmd;
 
                     SD_if_begin_r <= 1'b1;
-                    SD_if_send_rd_cmd <= 1'b1;
+                    SD_if_send_rd_cmd_r <= 1'b1;
                     LCD_if_begin_r <= 1'b1;
-                    LCD_if_send_px_cmd <= 1'b1;
+                    LCD_if_send_px_cmd_r <= 1'b1;
 
                 end else if(if_busy & if_begin) begin
                     //begin retract
@@ -254,21 +254,6 @@ always @(posedge clk_4M or negedge rst_n) begin
                     LCD_if_begin_r <= 1'b0;
                 end
             end 
-            /*
-            PIC_STATE_img_id: begin
-                //auto transfer at this state
-                //objective complete
-                //start next and switch state
-                pic_state <= PIC_STATE_sd_lcd_cmd;
-
-
-                SD_if_begin_r <= 1'b1;
-                SD_if_send_rd_cmd <= 1'b1;
-                LCD_if_begin_r <= 1'b1;
-                LCD_if_send_px_cmd <= 1'b1;
-
-            end 
-            */
             PIC_STATE_sd_lcd_cmd: begin
                 if(~if_busy & ~if_begin) begin
                     //objective complete
@@ -284,9 +269,9 @@ always @(posedge clk_4M or negedge rst_n) begin
                 end else if(if_busy & if_begin) begin
                     //begin retract
                     SD_if_begin_r <= 1'b0;
-                    SD_if_send_rd_cmd <= 1'b0;
+                    SD_if_send_rd_cmd_r <= 1'b0;
                     LCD_if_begin_r <= 1'b0;
-                    LCD_if_send_px_cmd <= 1'b0;
+                    LCD_if_send_px_cmd_r <= 1'b0;
                 end
             end 
             PIC_STATE_sd_cmd: begin
@@ -304,6 +289,7 @@ always @(posedge clk_4M or negedge rst_n) begin
                     //begin retract
                     SD_if_begin_r <= 1'b0;
                     SD_if_send_rd_cmd_r <= 1'b0;
+                    SD_if_end_of_frame_r <= ~|stream_op_cnt_next;
                 end
             end 
             PIC_STATE_stream: begin
@@ -315,7 +301,6 @@ always @(posedge clk_4M or negedge rst_n) begin
 
                         SD_if_begin_r <= 1'b1;
                         SD_if_send_rd_cmd_r <= 1'b1;
-                        SD_if_end_of_frame_r <= ~|stream_op_cnt_next;
 
                     end else begin
                         pic_state <= PIC_STATE_wait_uart;
@@ -329,6 +314,7 @@ always @(posedge clk_4M or negedge rst_n) begin
                     SD_if_stream_r <= 1'b0;
                     LCD_if_begin_r <= 1'b0;
                     LCD_if_stream_r <= 1'b0;
+                    SD_if_end_of_frame_r <= 1'b0;
                 end
             end 
             PIC_STATE_wait_uart: begin
@@ -348,7 +334,25 @@ always @(posedge clk_4M or negedge rst_n) begin
                     pic_state <= pic_state;
                 end
             end 
-            default: 
+            default: begin
+                pic_state <= PIC_STATE_init_perph;
+
+                stream_op_cnt_r = 9'b0;
+
+                SD_if_im_idx_r <= 4'h0;
+                SD_if_init_r <= 1'b1;               //init routine set to 1
+                SD_if_send_rd_cmd_r <= 1'b0;
+                SD_if_stream_r <= 1'b0;
+                SD_if_end_of_frame_r <= 1'b0;
+                SD_if_begin_r <= 1'b1;              //init routine set to 1
+                LCD_if_init_r <= 1'b1;              //init routine set to 1
+                LCD_if_send_px_cmd_r <= 1'b0;
+                LCD_if_stream_r <= 1'b0;
+                LCD_if_end_of_frame_r <= 1'b0;
+                LCD_if_begin_r <= 1'b1;             //init routine set to 1
+                ctl_ready_r <= 1'b0;
+            end
+
         endcase
         
     end

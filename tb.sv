@@ -6,10 +6,12 @@
 //`define TEST_LCD_IF_INIT_SEQ
 //`define TEST_LCD_IF_STREAM_512B
 //`define TEST_LCD_IF_STREAM_512B_END
-`define TEST_SD_IF_RD_BLK
+//`define TEST_LCD_IF_NOP
+//`define TEST_SD_IF_RD_BLK
 //`define TEST_SD_IF_STRM_512B
 //`define TEST_SD_IF_STRM_512B_COOP
 //`define TEST_SD_IF_INIT
+`define TEST_PIC_STATE_TF
 
 `define DISABLE_DELAY
 module tb;
@@ -593,6 +595,108 @@ lcd_if dut_if(
     .spi_cs(spi_bus_cs)
 );
 
+`elsif TEST_LCD_IF_NOP
+reg clk;
+reg rst_n;
+reg lcd_init;
+reg lcd_px;
+reg lcd_stream;
+wire lcd_busy;
+reg lcd_begin;
+
+reg [31:0]stream_data;
+reg [31:0]spi_bit_cnt;
+reg stream_trigger;
+
+wire spi_phy_begin;
+wire spi_phy_busy;
+wire spi_phy_wide;
+wire spi_cs;
+wire [31:0]spi_phy_mosi;
+
+wire spi_bus_mosi;
+wire spi_bus_clk;
+wire spi_bus_cs;
+wire lcd_data_cmd;
+
+initial begin
+    forever begin
+        #5 clk = ~clk;
+    end
+end
+
+initial begin
+    $display("===================\nTesting: lcd_if_nop.\n===================\n");
+    $dumpfile("dump.vcd");
+    $dumpvars(0);
+end
+
+always @(posedge spi_bus_clk) begin
+    spi_bit_cnt <= spi_bit_cnt + 32'h1;
+end
+
+initial begin
+    spi_bit_cnt <= 32'h0;
+    clk = 1'b0; rst_n = 1'b1; lcd_init = 1'b0; lcd_px = 1'b0; lcd_stream = 1'b0; lcd_begin = 1'b0; stream_trigger = 1'b0; stream_data = 32'h55AAE621;
+    #100 rst_n = 1'b0;
+    #100 rst_n = 1'b1; 
+
+    #100 lcd_begin = 1'b1;
+    #10 lcd_begin = 1'b0;
+    #50000 $finish();
+end
+
+spi_front dut_phy(
+    .spi_clk_in(clk),
+    .rst_n(rst_n),
+
+    //spi interface
+    .spi_clk_o(spi_bus_clk),
+    //output.spi_clk_t(),
+    .spi_mosi_o(spi_bus_mosi),
+    //output.spi_mosi_t(),
+    .spi_miso_i(1'b1),
+
+    //data interface
+    .data_mosi(spi_phy_mosi),
+    //output.data_miso(),
+
+    //control interface
+    .spi_begin(spi_phy_begin),
+    .spi_wide(spi_phy_wide),
+    .spi_busy(spi_phy_busy)
+);
+
+lcd_if dut_if(
+    .clk(clk),
+    .rst_n(rst_n),
+    
+    //actions
+    .init(lcd_init),             //initialize LCD
+    .px_stream_cmd(lcd_px),    //transmit pixel commands
+    .stream_512B(lcd_stream),      //stream 512 bytes at 4 bytes each stream trigger
+    .end_of_frame(1'b0),      //pull high when initiating the last block transfer.
+    //flow control
+    .if_begin(lcd_begin),
+    .if_busy(lcd_busy),
+
+    //data stream
+    .stream_data(stream_data),
+    .stream_trigger(1'h1),
+    //output .stream_busy(),
+
+    //lcd control pin
+    .lcd_data_cmd(lcd_data_cmd),
+
+    //spi phy
+    .spi_mosi(spi_phy_mosi),
+    //input [31:0]spi_miso, This IF output only. No read back
+    .spi_begin(spi_phy_begin),
+    .spi_wide(spi_phy_wide),
+    .spi_busy(spi_phy_busy),
+    .spi_cs(spi_bus_cs)
+);
+
 `elsif TEST_SD_IF_RD_BLK
 reg clk;
 reg rst_n;
@@ -1016,6 +1120,105 @@ sd_if dut_if(
     /*output */.spi_cs(spi_bus_cs)
 );
 
+`elsif TEST_PIC_STATE_TF
+
+reg clk;
+
+wire [3:0]SD_if_im_idx;
+wire SD_if_init;
+wire SD_if_send_rd_cmd;
+wire SD_if_stream;
+wire SD_if_end_of_frame;
+wire SD_if_begin;
+wire LCD_if_init;
+wire LCD_if_send_px_cmd;
+wire LCD_if_stream;
+wire LCD_if_end_of_frame;
+wire LCD_if_begin;
+wire ctl_ready;
+wire sys_wait_led;
+
+reg rst_n;
+reg SD_if_busy;
+reg LCD_if_busy;
+reg ctl_decr;
+reg ctl_incr;
+reg ctl_valid;
+
+initial begin
+    $display("===================\nTesting: main_fsm state transfer.\n===================\n");
+    $dumpfile("dump.vcd");
+    $dumpvars(0);
+end
+
+initial begin
+    clk = 1'b0;
+    forever begin
+        #5 clk <= ~clk;
+    end
+end
+
+
+always @(posedge clk or negedge rst_n)begin
+    if(~rst_n) begin
+        SD_if_busy <= 1'b0;
+        LCD_if_busy <= 1'b0;
+        
+    end else begin
+        SD_if_busy <= SD_if_begin;
+        LCD_if_busy <= LCD_if_begin;
+        
+    end
+    
+end
+
+initial begin
+    rst_n = 1'b1;
+    ctl_decr = 1'b0;
+    ctl_incr = 1'b0;
+    ctl_valid = 1'b0;
+
+    #500 rst_n <= 1'b0;
+    #100 rst_n <= 1'b1;
+
+    #40000 ctl_incr = 1'b1;ctl_valid = 1'b1;
+    #10 ctl_valid = 1'b0;
+    #40000 $finish();
+end
+
+
+
+d_pic_f dut_ip(
+    /*input */.clk_4M(clk),
+    /*input */.clk_1M(clk),
+    /*input */.rst_n(rst_n),
+
+    //SD if port
+    /*output [3:0]*/.SD_if_im_idx(SD_if_im_idx),
+    /*output */.SD_if_init(SD_if_init),
+    /*output */.SD_if_send_rd_cmd(SD_if_send_rd_cmd),
+    /*output */.SD_if_stream(SD_if_stream),
+    /*output */.SD_if_end_of_frame(SD_if_end_of_frame),
+    /*output */.SD_if_begin(SD_if_begin),
+    /*input */.SD_if_busy(SD_if_busy),
+    
+    //LCD if port
+    /*output */.LCD_if_init(LCD_if_init),
+    /*output */.LCD_if_send_px_cmd(LCD_if_send_px_cmd),
+    /*output */.LCD_if_stream(LCD_if_stream),
+    /*output */.LCD_if_end_of_frame(LCD_if_end_of_frame),
+    /*output */.LCD_if_begin(LCD_if_begin),
+    /*input */.LCD_if_busy(LCD_if_busy),
+
+    //UART control port
+    /*input */.ctl_decr(ctl_decr),
+    /*input */.ctl_incr(ctl_incr),
+    /*input */.ctl_valid(ctl_valid),
+    /*output */.ctl_ready(ctl_ready),
+
+    //ip status report
+    /*output */.sys_wait_led(sys_wait_led)
+);
 
 `else
     initial begin
