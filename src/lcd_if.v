@@ -1,4 +1,5 @@
 
+`define DISABLE_DELAY
 module lcd_if (
     input clk,
     input rst_n,
@@ -204,7 +205,7 @@ always @(posedge clk or negedge rst_n) begin
                         LCD_OP_BITS_init : begin
                             lcd_state <= LCD_STATE_init;
                             state_op_cnt    <= 8'b0;
-                            state_op_top <= 8'd51;
+                            state_op_top <= 8'd50;
                             spi_cs_r        <=  1'b0;
                             spi_begin_r     <=  1'b0;
                             spi_wide_r      <=  1'b0;
@@ -212,7 +213,7 @@ always @(posedge clk or negedge rst_n) begin
                         LCD_OP_BITS_px_cmd : begin
                             lcd_state <= LCD_STATE_send_px;
                             state_op_cnt    <= 8'b0;
-                            state_op_top <= 8'd12;
+                            state_op_top <= 8'd11;
                             spi_cs_r        <=  1'b0;
                             spi_begin_r     <=  1'b0;
                             spi_wide_r      <=  1'b0;
@@ -238,7 +239,7 @@ always @(posedge clk or negedge rst_n) begin
             end
             LCD_STATE_init: begin
                 //work finish only after all sequence done and 
-                if(state_op_term & ~spi_busy_r)begin
+                if(state_op_term & ~spi_busy_r & ~spi_begin_r)begin
                     lcd_state <= LCD_STATE_idle;
                     spi_begin_r <= 1'b0;
                     spi_cs_r <= 1'b1;
@@ -248,18 +249,19 @@ always @(posedge clk or negedge rst_n) begin
                     if(spi_busy_r & spi_begin_r)begin
                         //Deasserts begin_r to wait for spi to complete;
                         spi_begin_r <= 1'b0;
+                        state_op_cnt <= state_op_cnt_next;//Only increment if not term yet;
+                        
                     end else if(lcd_cmd_del_cnt_nz)begin
                         //Count down if there is delay issued in the sequence modifier bits.
                         lcd_cmd_del_cnt <= lcd_cmd_del_cnt - 20'h1;
-                    end else if(~spi_busy_r & ~spi_begin_r & ~state_op_term)begin
+                    end else if(~spi_busy_r & ~spi_begin_r)begin
                         /*
                         advance state op counter
                         load current transfer from sequence
                         set del_cnt if sequence has delay modifier.
                         */
-                        state_op_cnt <= state_op_cnt_next;//Only increment if not term yet;
                         spi_mosi_r <= {24'h0,lcd_init_routine_seq[state_op_cnt][7:0]};
-                        spi_begin_r <= spi_begin_term;
+                        spi_begin_r <= 1'b1;
                         lcd_data_cmd_r <= lcd_init_routine_seq[state_op_cnt][8];
                         `ifndef DISABLE_DELAY
                         if(lcd_init_routine_seq[state_op_cnt][9])begin
@@ -280,13 +282,16 @@ always @(posedge clk or negedge rst_n) begin
             end
             LCD_STATE_send_px: begin
                 //work finish only after all sequence done and 
-                if(state_op_term & ~spi_busy_r)begin
+                if(state_op_term & ~spi_busy_r & ~spi_begin_r)begin
                     lcd_state <= LCD_STATE_idle;
                     spi_begin_r <= 1'b0;
                     //setup for next state
                 end else begin
                     //state routine
-                    if(~spi_busy_r & ~spi_begin_r & ~state_op_term)begin
+                    if(spi_busy_r & spi_begin_r)begin
+                        //Deasserts begin_r to wait for spi to complete;
+                        spi_begin_r <= 1'b0;
+                    end else if(~spi_busy_r & ~spi_begin_r)begin
                         /*
                         advance state op counter
                         load current transfer from sequence
@@ -294,23 +299,9 @@ always @(posedge clk or negedge rst_n) begin
                         */
                         state_op_cnt <= state_op_cnt_next;//Only increment if not term yet;
                         spi_mosi_r <= {24'h0,lcd_px_routine_seq[state_op_cnt][7:0]};
-                        spi_begin_r <= spi_begin_term;
+                        spi_begin_r <= 1'b1;
                         lcd_data_cmd_r <= lcd_px_routine_seq[state_op_cnt][8];
-                        `ifndef DISABLE_DELAY
-                        if(lcd_px_routine_seq[state_op_cnt][9])begin
-                            lcd_cmd_del_cnt <= LCD_CMD_DEL_50MS_COUNT;
-                        end else if(lcd_px_routine_seq[state_op_cnt][10])begin
-                            lcd_cmd_del_cnt <= LCD_CMD_DEL_250MS_COUNT;
-                        end else begin
-                            lcd_cmd_del_cnt <= 20'h0;
-                        end
-                        `endif
-                    end else if(spi_busy_r & spi_begin_r)begin
-                        //Deasserts begin_r to wait for spi to complete;
-                        spi_begin_r <= 1'b0;
-                    end else if(lcd_cmd_del_cnt_nz)begin
-                        //Count down if there is delay issued in the sequence modifier bits.
-                        lcd_cmd_del_cnt <= lcd_cmd_del_cnt - 20'h1;
+                        
                     end else begin
                         //do nothing?
                     end
