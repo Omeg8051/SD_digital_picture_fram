@@ -5,6 +5,7 @@ module d_pic_f (
     input rst_n,
 
     //SD if port
+    output [3:0]SD_if_im_idx;
     output SD_if_init,
     output SD_if_send_rd_cmd,
     output SD_if_stream,
@@ -130,12 +131,14 @@ localparam PIC_STATE_init_perph = 3'h0;
 localparam PIC_STATE_img_id = 3'h1;
 localparam PIC_STATE_sd_lcd_cmd = 3'h2;
 localparam PIC_STATE_sd_cmd = 3'h3;
-localparam PIC_STATE_wait_uart = 3'h4;
+localparam PIC_STATE_stream = 3'h4;
+localparam PIC_STATE_wait_uart = 3'h5;
 
-reg [2:0] pic_state;
+
 
 
 //output reg
+reg [3:0] SD_if_im_idx_r;
 reg SD_if_init_r;
 reg SD_if_send_rd_cmd_r;
 reg SD_if_stream_r;
@@ -148,6 +151,18 @@ reg LCD_if_end_of_frame_r;
 reg LCD_if_begin_r;
 reg ctl_ready_r;
 
+assign SD_if_im_idx = SD_if_im_idx_r
+assign SD_if_init = SD_if_init_r
+assign SD_if_send_rd_cmd = SD_if_send_rd_cmd_r
+assign SD_if_stream = SD_if_stream_r
+assign SD_if_end_of_frame = SD_if_end_of_frame_r
+assign SD_if_begin = SD_if_begin_r
+assign LCD_if_init = LCD_if_init_r
+assign LCD_if_send_px_cmd = LCD_if_send_px_cmd_r
+assign LCD_if_stream = LCD_if_stream_r
+assign LCD_if_end_of_frame = LCD_if_end_of_frame_r
+assign LCD_if_begin = LCD_if_begin_r
+assign ctl_ready = ctl_ready_r
 //sys busy led driver
 assign sys_wait_led = ~|(pic_state ^ PIC_STATE_wait_uart);
 
@@ -157,12 +172,29 @@ assign sys_wait_led = ~|(pic_state ^ PIC_STATE_wait_uart);
 reg SD_if_busy_r;
 reg LCD_if_busy_r;
 
-wire if_busy;
-assign if_busy <= SD_if_busy_r | LCD_if_busy_r;
-
 reg ctl_decr_r;
 reg ctl_incr_r;
 reg ctl_valid_r;
+
+
+//internal reg
+reg [2:0] pic_state;
+reg [8:0] stream_op_cnt_r;
+wire [8:0] stream_op_cnt_next;
+assign stream_op_cnt_next = stream_op_cnt_r - 9'b1;
+wire stream_op_nz;
+assign stream_op_nz = |stream_op_cnt_r;
+
+wire [3:0] im_idx_decr;
+assign im_idx_decr = SD_if_im_idx_r - 4'h1;
+wire [3:0] im_idx_incr;
+assign im_idx_incr = SD_if_im_idx_r + 4'h1;
+
+wire if_busy;
+assign if_busy <= SD_if_busy_r | LCD_if_busy_r;
+
+wire if_begin;
+assign if_begin <= SD_if_begin_r | LCD_if_begin_r;
 
 always @(posedge clk_4M ) begin
 
@@ -185,64 +217,135 @@ always @(posedge clk_4M or negedge rst_n) begin
     if(~rst_n) begin
         pic_state <= PIC_STATE_init_perph;
 
-        SD_if_init_r <= 1'b0;
+        stream_op_cnt_r = 9'b0;
+
+        SD_if_im_idx_r <= 4'h0;
+        SD_if_init_r <= 1'b1;               //init routine set to 1
         SD_if_send_rd_cmd_r <= 1'b0;
         SD_if_stream_r <= 1'b0;
         SD_if_end_of_frame_r <= 1'b0;
-        SD_if_begin_r <= 1'b0;
-        LCD_if_init_r <= 1'b0;
+        SD_if_begin_r <= 1'b1;              //init routine set to 1
+        LCD_if_init_r <= 1'b1;              //init routine set to 1
         LCD_if_send_px_cmd_r <= 1'b0;
         LCD_if_stream_r <= 1'b0;
         LCD_if_end_of_frame_r <= 1'b0;
-        LCD_if_begin_r <= 1'b0;
+        LCD_if_begin_r <= 1'b1;             //init routine set to 1
         ctl_ready_r <= 1'b0;
 
     end else begin
 
         case (pic_state)
             PIC_STATE_init_perph: begin
-                if(~busy_r & ~begin_r) begin
+                if(~if_busy & ~if_begin) begin
                     //objective complete
                     //start next and switch state
-                    pic_state <= 
-                end else if(busy_r & begin_r) begin
+                    pic_state <= PIC_STATE_sd_lcd_cmd;
+
+                    SD_if_begin_r <= 1'b1;
+                    SD_if_send_rd_cmd <= 1'b1;
+                    LCD_if_begin_r <= 1'b1;
+                    LCD_if_send_px_cmd <= 1'b1;
+
+                end else if(if_busy & if_begin) begin
                     //begin retract
+                    SD_if_init_r <= 1'b0;
+                    SD_if_begin_r <= 1'b0;
+                    LCD_if_init_r <= 1'b0;
+                    LCD_if_begin_r <= 1'b0;
                 end
             end 
+            /*
             PIC_STATE_img_id: begin
-                if(~busy_r & ~begin_r) begin
-                    //objective complete
-                    //start next and switch state
-                    pic_state <= 
-                end else if(busy_r & begin_r) begin
-                    //begin retract
-                end
+                //auto transfer at this state
+                //objective complete
+                //start next and switch state
+                pic_state <= PIC_STATE_sd_lcd_cmd;
+
+
+                SD_if_begin_r <= 1'b1;
+                SD_if_send_rd_cmd <= 1'b1;
+                LCD_if_begin_r <= 1'b1;
+                LCD_if_send_px_cmd <= 1'b1;
+
             end 
+            */
             PIC_STATE_sd_lcd_cmd: begin
-                if(~busy_r & ~begin_r) begin
+                if(~if_busy & ~if_begin) begin
                     //objective complete
                     //start next and switch state
-                    pic_state <= 
-                end else if(busy_r & begin_r) begin
+                    pic_state <= PIC_STATE_stream;
+                    stream_op_cnt_r <= 9'd300;
+
+                    SD_if_begin_r <= 1'b1;
+                    SD_if_stream_r <= 1'b1;
+                    SD_if_end_of_frame_r <= 1'b0;
+                    LCD_if_begin_r <= 1'b1;
+                    LCD_if_stream_r <= 1'b1;
+                end else if(if_busy & if_begin) begin
                     //begin retract
+                    SD_if_begin_r <= 1'b0;
+                    SD_if_send_rd_cmd <= 1'b0;
+                    LCD_if_begin_r <= 1'b0;
+                    LCD_if_send_px_cmd <= 1'b0;
                 end
             end 
             PIC_STATE_sd_cmd: begin
-                if(~busy_r & ~begin_r) begin
+                if(~if_busy & ~if_begin) begin
                     //objective complete
                     //start next and switch state
-                    pic_state <= 
-                end else if(busy_r & begin_r) begin
+                    pic_state <= PIC_STATE_stream;
+
+                    SD_if_begin_r <= 1'b1;
+                    SD_if_stream_r <= 1'b1;
+                    LCD_if_begin_r <= 1'b1;
+                    LCD_if_stream_r <= 1'b1;
+
+                end else if(if_busy & if_begin) begin
                     //begin retract
+                    SD_if_begin_r <= 1'b0;
+                    SD_if_send_rd_cmd_r <= 1'b0;
+                end
+            end 
+            PIC_STATE_stream: begin
+                if(~if_busy & ~if_begin) begin
+                    //objective complete
+                    //start next and switch state
+                    if(stream_op_nz)begin
+                        pic_state <= PIC_STATE_sd_cmd;
+
+                        SD_if_begin_r <= 1'b1;
+                        SD_if_send_rd_cmd_r <= 1'b1;
+                        SD_if_end_of_frame_r <= ~|stream_op_cnt_next;
+
+                    end else begin
+                        pic_state <= PIC_STATE_wait_uart;
+                        ctl_ready_r <= 1'b1;
+                        
+                    end
+                end else if(if_busy & if_begin) begin
+                    //begin retract
+                    stream_op_cnt_r <= stream_op_cnt_next;
+                    SD_if_begin_r <= 1'b0;
+                    SD_if_stream_r <= 1'b0;
+                    LCD_if_begin_r <= 1'b0;
+                    LCD_if_stream_r <= 1'b0;
                 end
             end 
             PIC_STATE_wait_uart: begin
-                if(~busy_r & ~begin_r) begin
+                if(ctl_ready_r & ctl_valid_r) begin
                     //objective complete
                     //start next and switch state
-                    pic_state <= 
-                end else if(busy_r & begin_r) begin
-                    //begin retract
+                    pic_state <= PIC_STATE_sd_lcd_cmd;
+                    ctl_ready_r <= 1'b1;
+                    case ({ctl_incr_r, ctl_decr_r})
+                        2'b01: SD_if_im_idx_r <= im_idx_decr;
+                        2'b10: SD_if_im_idx_r <= im_idx_incr;
+                        default: SD_if_im_idx_r <= SD_if_im_idx_r;
+                    endcase
+                
+
+                end else begin
+                    pic_state <= pic_state;
                 end
             end 
             default: 
@@ -261,16 +364,6 @@ end
 *8==================================================================================D
 */
 
-/*
-next state combinational logic beyond this point
-*/
 
-/*
-behavior logic beyond this point
-*/
-
-/*
-debug status logic beyond this point
-*/
 
 endmodule
