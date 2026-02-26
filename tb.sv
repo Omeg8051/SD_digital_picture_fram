@@ -8,10 +8,11 @@
 //`define TEST_LCD_IF_STREAM_512B_END
 //`define TEST_LCD_IF_NOP
 //`define TEST_SD_IF_RD_BLK
-//`define TEST_SD_IF_STRM_512B
-//`define TEST_SD_IF_STRM_512B_COOP
+`define TEST_SD_IF_STRM_512B
+`define TEST_SD_IF_STRM_512B_COOP
 //`define TEST_SD_IF_INIT
-`define TEST_PIC_STATE_TF
+//`define TEST_PIC_STATE_TF
+//`define TEST_CHIP_TOP
 
 `define DISABLE_DELAY
 module tb;
@@ -316,8 +317,8 @@ wire spi_phy_wide;
 wire spi_bus_cs;
 wire [31:0]spi_phy_mosi;
 
-wire spi_mosi;
-wire spi_phy_clk;
+wire spi_bus_mosi;
+wire spi_bus_clk;
 wire lcd_data_cmd;
 
 initial begin
@@ -347,9 +348,9 @@ spi_front dut_phy(
     .rst_n(rst_n),
 
     //spi interface
-    .spi_clk_o(spi_phy_clk),
+    .spi_clk_o(spi_bus_clk),
     //output.spi_clk_t(),
-    .spi_mosi_o(spi_mosi),
+    .spi_mosi_o(spi_bus_mosi),
     //output.spi_mosi_t(),
     .spi_miso_i(1'b1),
 
@@ -409,8 +410,8 @@ wire spi_phy_wide;
 wire spi_bus_cs;
 wire [31:0]spi_phy_mosi;
 
-wire spi_mosi;
-wire spi_phy_clk;
+wire spi_bus_mosi;
+wire spi_bus_clk;
 wire lcd_data_cmd;
 
 initial begin
@@ -420,7 +421,7 @@ initial begin
 end
 
 initial begin
-    $display("===================\nTesting: lcd_if_pixel_sequence.\n===================\n");
+    $display("===================\nTesting: lcd_if_init_sequence.\n===================\n");
     $dumpfile("dump.vcd");
     $dumpvars(0);
 end
@@ -440,9 +441,9 @@ spi_front dut_phy(
     .rst_n(rst_n),
 
     //spi interface
-    .spi_clk_o(spi_phy_clk),
+    .spi_clk_o(spi_bus_clk),
     //output.spi_clk_t(),
-    .spi_mosi_o(spi_mosi),
+    .spi_mosi_o(spi_bus_mosi),
     //output.spi_mosi_t(),
     .spi_miso_i(1'b1),
 
@@ -1219,6 +1220,137 @@ d_pic_f dut_ip(
     //ip status report
     /*output */.sys_wait_led(sys_wait_led)
 );
+
+
+`elsif TEST_CHIP_TOP
+
+reg clk;
+reg rst_n;
+reg rx;
+reg ready;
+wire [7:0]data_rx;
+wire valid;
+initial begin
+    forever begin
+        #5 clk = ~clk;
+    end
+end
+
+initial begin
+    $display("===================\nTesting: chip top.\n===================\n");
+    $dumpfile("dump.vcd");
+    $dumpvars(0);
+end
+
+initial begin
+    clk = 1'b0; rst_n = 1'b1; ready <= 1'b0; rx <= 1'b1;
+
+    #50 rst_n = 1'b0; rx <= 1'b1;
+    #50 rst_n = 1'b1; rx <= 1'b1;
+
+    
+    #40000 rx = 1'b0;//start
+    #160 rx = 1'b1;//bit 0
+    #160 rx = 1'b0;//bit 1
+    #160 rx = 1'b1;//bit 2
+    #160 rx = 1'b0;//bit 3
+    #160 rx = 1'b1;//bit 4
+    #160 rx = 1'b0;//bit 5
+    #160 rx = 1'b1;//bit 6
+    #160 rx = 1'b0;//bit 7
+    #160 rx = 1'b1;//stop bit
+
+    #40000 rx = 1'b0;//start
+    #160 rx = 1'b1;//bit 0
+    #160 rx = 1'b1;//bit 1
+    #160 rx = 1'b1;//bit 2
+    #160 rx = 1'b1;//bit 3
+    #160 rx = 1'b0;//bit 4
+    #160 rx = 1'b0;//bit 5
+    #160 rx = 1'b0;//bit 6
+    #160 rx = 1'b0;//bit 7
+    #160 rx = 1'b1;//stop bit
+
+    #40000 rx = 1'b0;//start
+    #160 rx = 1'b0;//bit 0
+    #160 rx = 1'b1;//bit 1
+    #160 rx = 1'b1;//bit 2
+    #160 rx = 1'b0;//bit 3
+    #160 rx = 1'b1;//bit 4
+    #160 rx = 1'b0;//bit 5
+    #160 rx = 1'b0;//bit 6
+    #160 rx = 1'b1;//bit 7
+    #160 rx = 1'b1;//stop bit
+    
+    //test hold data before ready function;
+    #40000 rx = 1'b0;//start
+    #160 rx = 1'b1;//bit 0
+    #160 rx = 1'b1;//bit 1
+    #160 rx = 1'b1;//bit 2
+    #160 rx = 1'b1;//bit 3
+    #160 rx = 1'b0;//bit 4
+    #160 rx = 1'b0;//bit 5
+    #160 rx = 1'b0;//bit 6
+    #160 rx = 1'b0;//bit 7
+    #160 rx = 1'b1;//stop bit
+
+    #40000 rx = 1'b0;//start
+    #160 rx = 1'b1;//bit 0
+    #160 rx = 1'b0;//bit 1
+    #160 rx = 1'b0;//bit 2
+    #160 rx = 1'b1;//bit 3
+    #160 rx = 1'b0;//bit 4
+    #160 rx = 1'b1;//bit 5
+    #160 rx = 1'b1;//bit 6
+    #160 rx = 1'b0;//bit 7
+    #160 rx = 1'b1;//stop bit
+
+    
+    #200 $finish();
+end
+
+
+wire sd_spi_clk;
+wire sd_spi_mosi;
+reg sd_spi_miso;
+wire sd_spi_cs;
+
+wire lcd_spi_clk;
+wire lcd_spi_mosi;
+reg lcd_spi_miso;
+
+wire lcd_spi_cs;
+wire lcd_cm_da;
+wire sys_wait_led;
+
+
+pic_chip_top dut (
+    /*input */.clk_1M(clk),
+    /*input */.clk_4M(clk),
+    /*input */.rst_n(rst_n),
+
+    //SD spi
+    /*output */.sd_spi_clk(sd_spi_clk),
+    /*output */.sd_spi_mosi(sd_spi_mosi),
+    /*input */.sd_spi_miso(sd_spi_miso),
+    /*output */.sd_spi_cs(sd_spi_cs),
+
+    //LCD spi
+    /*output */.lcd_spi_clk(lcd_spi_clk),
+    /*output */.lcd_spi_mosi(lcd_spi_mosi),
+    /*output */.lcd_spi_cs(lcd_spi_cs),
+    /*output */.lcd_cm_da(lcd_cm_da),
+
+    //status
+    /*output */.sys_wait_led(sys_wait_led),
+
+    //UART pins
+    /*output *///.uart_tx(),
+    /*input */.uart_rx(rx)
+);
+
+
+
 
 `else
     initial begin
