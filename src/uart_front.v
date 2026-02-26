@@ -1,4 +1,8 @@
-module uart_front (
+module uart_front #(
+     	parameter p_baud_rate = 115200,
+ 		parameter p_clk_freq = 1000000
+        )
+        (
     input clk,
     input rst_n,
 
@@ -48,8 +52,8 @@ reg [11:0] bit_divider;//slowest is 1200 baud at 4M/3333
 reg [11:0] bit_divider_cnt;
 wire bit_divider_cnt_z;
 assign bit_divider_cnt_z = ~|bit_divider_cnt;
-localparam p_baud_rate = 250000;
-localparam p_clk_freq = 4000000;
+//localparam p_baud_rate = 115200;
+//localparam p_clk_freq = 1000000;
 
 localparam p_bit_divider_init = p_clk_freq / p_baud_rate - 1;
 
