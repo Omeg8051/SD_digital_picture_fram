@@ -1,23 +1,33 @@
 
 module d_pic_f (
-    input clk,
+    input clk_4M,
+    input clk_1M,
     input rst_n,
 
-    //SD spi port
-    output SD_spi_clk,
-    output SD_spi_cs,
-    output SD_spi_mosi,
-    input SD_spi_miso,
+    //SD if port
+    output SD_if_init,
+    output SD_if_send_rd_cmd,
+    output SD_if_stream,
+    output SD_if_end_of_frame,
+    output SD_if_begin,
+    input SD_if_busy,
     
-    //LCD spi port
-    output LCD_spi_clk,
-    output LCD_spi_cs,
-    output LCD_spi_mosi,
-    input LCD_spi_miso,
+    //LCD if port
+    output LCD_if_init,
+    output LCD_if_send_px_cmd,
+    output LCD_if_stream,
+    output LCD_if_end_of_frame,
+    output LCD_if_begin,
+    input LCD_if_busy,
 
     //UART control port
-    output UART_tx,
-    input UART_rx
+    input ctl_decr,
+    input ctl_incr,
+    input ctl_valid,
+    output ctl_ready,
+
+    //ip status report
+    output sys_wait_led
 );
 
 /*
@@ -110,27 +120,136 @@ Transition to blk_offset_reset:
 //interaction bit list
 //include command bits
 localparam sd_bit_p_on = 16'd64;//6B cmd0 + 1B FFh + 1B R1
-localparam sd_bit_init_0 = 16'd96;//6B cmd8 + 1B FFh + 1B R1 + 4B volt_info
-localparam sd_bit_init_1 = 16'd128;//6B cmd55 + 1B FFh + 1B R1 + 6B acmd41 + 1B FFh + 1B R1
+localparam sd_bit_init_0 = 16'd128;//6B cmd55 + 1B FFh + 1B R1 + 6B acmd41 + 1B FFh + 1B R1
 localparam sd_bit_ready = 16'd64;//6B cmd17/18 + 1B FFh + 1B R1
 localparam sd_bit_s_blk_setup = 16'd1200;//149B FFh + 1B FEh
-localparam sd_bit_m_blk_setup = 16'd1200;//149B FFh + 1B FEh
 localparam sd_bit_s_blk_rd = 16'd4112;//512B 5Ah + 2B 69h
-localparam sd_bit_m_blk_rd = 16'd65535;//infinite untill cmd12 is accepted
 
-//command list:
-localparam sdspi_cmd0 = 8'h40;
-localparam sdspi_cmd8 = 8'h48;
-localparam sdspi_cmd55 = 8'h77;
-localparam sdspi_acmd41 = 8'h69;
-localparam sdspi_cmd12 = 8'h4C;
-localparam sdspi_cmd17 = 8'h51;
-localparam sdspi_cmd18 = 8'h52;
+
+localparam PIC_STATE_init_perph = 3'h0;
+localparam PIC_STATE_img_id = 3'h1;
+localparam PIC_STATE_sd_lcd_cmd = 3'h2;
+localparam PIC_STATE_sd_cmd = 3'h3;
+localparam PIC_STATE_wait_uart = 3'h4;
+
+reg [2:0] pic_state;
+
+
+//output reg
+reg SD_if_init_r;
+reg SD_if_send_rd_cmd_r;
+reg SD_if_stream_r;
+reg SD_if_end_of_frame_r;
+reg SD_if_begin_r;
+reg LCD_if_init_r;
+reg LCD_if_send_px_cmd_r;
+reg LCD_if_stream_r;
+reg LCD_if_end_of_frame_r;
+reg LCD_if_begin_r;
+reg ctl_ready_r;
+
+//sys busy led driver
+assign sys_wait_led = ~|(pic_state ^ PIC_STATE_wait_uart);
+
+//input sample reg
+
+
+reg SD_if_busy_r;
+reg LCD_if_busy_r;
+
+wire if_busy;
+assign if_busy <= SD_if_busy_r | LCD_if_busy_r;
+
+reg ctl_decr_r;
+reg ctl_incr_r;
+reg ctl_valid_r;
+
+always @(posedge clk_4M ) begin
+
+    //input sample blk
+    
+    SD_if_busy_r <= SD_if_busy;
+    LCD_if_busy_r <= LCD_if_busy;
+    ctl_decr_r <= ctl_decr;
+    ctl_incr_r <= ctl_incr;
+    ctl_valid_r <= ctl_valid;
+end
+
 
 
 /*
 state transition beyond this point
 */
+
+always @(posedge clk_4M or negedge rst_n) begin
+    if(~rst_n) begin
+        pic_state <= PIC_STATE_init_perph;
+
+        SD_if_init_r <= 1'b0;
+        SD_if_send_rd_cmd_r <= 1'b0;
+        SD_if_stream_r <= 1'b0;
+        SD_if_end_of_frame_r <= 1'b0;
+        SD_if_begin_r <= 1'b0;
+        LCD_if_init_r <= 1'b0;
+        LCD_if_send_px_cmd_r <= 1'b0;
+        LCD_if_stream_r <= 1'b0;
+        LCD_if_end_of_frame_r <= 1'b0;
+        LCD_if_begin_r <= 1'b0;
+        ctl_ready_r <= 1'b0;
+
+    end else begin
+
+        case (pic_state)
+            PIC_STATE_init_perph: begin
+                if(~busy_r & ~begin_r) begin
+                    //objective complete
+                    //start next and switch state
+                    pic_state <= 
+                end else if(busy_r & begin_r) begin
+                    //begin retract
+                end
+            end 
+            PIC_STATE_img_id: begin
+                if(~busy_r & ~begin_r) begin
+                    //objective complete
+                    //start next and switch state
+                    pic_state <= 
+                end else if(busy_r & begin_r) begin
+                    //begin retract
+                end
+            end 
+            PIC_STATE_sd_lcd_cmd: begin
+                if(~busy_r & ~begin_r) begin
+                    //objective complete
+                    //start next and switch state
+                    pic_state <= 
+                end else if(busy_r & begin_r) begin
+                    //begin retract
+                end
+            end 
+            PIC_STATE_sd_cmd: begin
+                if(~busy_r & ~begin_r) begin
+                    //objective complete
+                    //start next and switch state
+                    pic_state <= 
+                end else if(busy_r & begin_r) begin
+                    //begin retract
+                end
+            end 
+            PIC_STATE_wait_uart: begin
+                if(~busy_r & ~begin_r) begin
+                    //objective complete
+                    //start next and switch state
+                    pic_state <= 
+                end else if(busy_r & begin_r) begin
+                    //begin retract
+                end
+            end 
+            default: 
+        endcase
+        
+    end
+end
 
 /**
 *8==================================================================================D
