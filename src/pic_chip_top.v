@@ -12,7 +12,6 @@ module pic_chip_top (
     //LCD spi
     output lcd_spi_clk,
     output lcd_spi_mosi,
-    input lcd_spi_miso,
     output lcd_spi_cs,
     output lcd_cm_da,
 
@@ -20,7 +19,7 @@ module pic_chip_top (
     output sys_wait_led,
 
     //UART pins
-    output uart_tx,
+    //output uart_tx,
     input uart_rx
 );
 
@@ -98,7 +97,7 @@ sd_if sd_if_0(
     /*output */.if_busy(SD_if_busy),
 
     //data stream
-    /*output [31:0]*/.stream_data({stream_data_w[23:16],stream_data_w[31:24],stream_data_w[7:0],stream_data_w[15:8]}),
+    /*output [31:0]*/.stream_data({stream_data[23:16],stream_data[31:24],stream_data[7:0],stream_data[15:8]}),
     /*output */.stream_trigger(stream_trigger),
     /*input */.stream_busy(stream_busy),      //pull high when initiating the last block transfer.
 
