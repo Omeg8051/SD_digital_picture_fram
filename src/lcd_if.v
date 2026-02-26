@@ -1,5 +1,5 @@
 
-`define DISABLE_DELAY
+//`define DISABLE_DELAY
 module lcd_if (
     input clk,
     input rst_n,
