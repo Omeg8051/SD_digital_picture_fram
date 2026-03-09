@@ -1,6 +1,6 @@
 module uart_front #(
-     	parameter p_baud_rate = 115200,
- 		parameter p_clk_freq = 1000000
+     	parameter p_baud_rate = 115200.0,
+ 		parameter p_clk_freq = 1000000.0
         )
         (
     input clk,
@@ -16,8 +16,9 @@ module uart_front #(
 
     //control interface
     output uart_valid,
-    input uart_ready//,
-    //output uart_busy,
+    input uart_ready,
+
+    output uart_samp
     //input uart_begin
 );
 
@@ -52,10 +53,11 @@ reg [11:0] bit_divider;//slowest is 1200 baud at 4M/3333
 reg [11:0] bit_divider_cnt;
 wire bit_divider_cnt_z;
 assign bit_divider_cnt_z = ~|bit_divider_cnt;
+assign uart_samp = bit_divider_cnt_z;
 //localparam p_baud_rate = 115200;
 //localparam p_clk_freq = 1000000;
 
-localparam p_bit_divider_init = p_clk_freq / p_baud_rate - 1;
+localparam p_bit_divider_init = $rtoi($ceil(p_clk_freq / p_baud_rate)) - 1;
 
 reg [7:0]rx_byte_r;
 reg [7:0]data_rx_r;
