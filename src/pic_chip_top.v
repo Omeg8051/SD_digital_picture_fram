@@ -20,7 +20,12 @@ module pic_chip_top (
 
     //UART pins
     //output uart_tx,
-    input uart_rx
+    input uart_rx,
+
+    //debug
+    output [2:0]ip_c_state,
+
+    output uart_samp
 );
 
 wire [3:0]SD_if_im_idx;
@@ -70,7 +75,8 @@ d_pic_f main_fsm(
     /*output */.ctl_ready(CTL_if_ready),
 
     //ip status report
-    /*output */.sys_wait_led(sys_wait_led)
+    /*output */.sys_wait_led(sys_wait_led),
+    /*output [2:0]*/.ip_c_state(ip_c_state)
 );
 
 
@@ -118,8 +124,8 @@ spi_front sd_phy_0(
 
     //spi interface
     .spi_clk_o(sd_spi_clk),
-    .spi_mosi_o(spi_bus_mosi),
-    .spi_miso_i(spi_bus_miso),
+    .spi_mosi_o(sd_spi_mosi),
+    .spi_miso_i(sd_spi_miso),
 
     //data interface
     .data_mosi(sd_spi_mosi_d),
@@ -128,7 +134,6 @@ spi_front sd_phy_0(
     //control interface
     .spi_begin(sd_spi_begin),
     .spi_wide(sd_spi_wide),
-    //.spi_wide(1'b0),
     .spi_busy(sd_spi_busy)
 );
 
@@ -198,7 +203,10 @@ wire uart_valid;
 wire uart_ready;
 
 
-uart_front dut(
+uart_front #(
+    .p_baud_rate(250000.0),
+    .p_clk_freq(5000000.0)
+) dut(
     .clk(clk_1M),
     .rst_n(rst_n),
 
@@ -210,11 +218,12 @@ uart_front dut(
 
     //control interface
     .uart_valid(uart_valid),
-    .uart_ready(uart_ready)//,
+    .uart_ready(uart_ready),
+    .uart_samp(uart_samp)
 );
 
 ctl_if dut_1(
-    .clk(clk),
+    .clk(clk_1M),
     .rst_n(rst_n),
 
     //uart interface

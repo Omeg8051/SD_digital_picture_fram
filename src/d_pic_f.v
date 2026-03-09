@@ -28,7 +28,8 @@ module d_pic_f (
     output ctl_ready,
 
     //ip status report
-    output sys_wait_led
+    output sys_wait_led,
+    output [2:0]ip_c_state
 );
 
 /*
@@ -178,6 +179,7 @@ reg ctl_valid_r;
 
 //internal reg
 reg [2:0] pic_state;
+assign ip_c_state = pic_state;
 reg [8:0] stream_op_cnt_r;
 wire [8:0] stream_op_cnt_next;
 assign stream_op_cnt_next = stream_op_cnt_r - 9'b1;
@@ -191,6 +193,8 @@ assign im_idx_incr = SD_if_im_idx_r + 4'h1;
 
 wire if_busy;
 assign if_busy = SD_if_busy_r | LCD_if_busy_r;
+wire if_all_busy;
+assign if_all_busy = SD_if_busy_r & LCD_if_busy_r;
 
 wire if_begin;
 assign if_begin = SD_if_begin_r | LCD_if_begin_r;
@@ -244,7 +248,7 @@ always @(posedge clk_4M or negedge rst_n) begin
                     LCD_if_begin_r <= 1'b1;
                     LCD_if_send_px_cmd_r <= 1'b1;
 
-                end else if(if_busy & if_begin) begin
+                end else if(if_all_busy & if_begin) begin
                     //begin retract
                     SD_if_init_r <= 1'b0;
                     SD_if_begin_r <= 1'b0;
@@ -257,14 +261,15 @@ always @(posedge clk_4M or negedge rst_n) begin
                     //objective complete
                     //start next and switch state
                     pic_state <= PIC_STATE_stream;
-                    stream_op_cnt_r <= 9'd300;
+                    stream_op_cnt_r <= 9'd301;
+                    //stream_op_cnt_r <= 9'd4;
 
                     SD_if_begin_r <= 1'b1;
                     SD_if_stream_r <= 1'b1;
                     end_of_frame_r <= 1'b0;
                     LCD_if_begin_r <= 1'b1;
                     LCD_if_stream_r <= 1'b1;
-                end else if(if_busy & if_begin) begin
+                end else if(if_all_busy & if_begin) begin
                     //begin retract
                     SD_if_begin_r <= 1'b0;
                     SD_if_send_rd_cmd_r <= 1'b0;
@@ -283,7 +288,7 @@ always @(posedge clk_4M or negedge rst_n) begin
                     LCD_if_begin_r <= 1'b1;
                     LCD_if_stream_r <= 1'b1;
 
-                end else if(if_busy & if_begin) begin
+                end else if(SD_if_busy_r & if_begin) begin//only SD_if will be active here. No need to check if LCD_if is busy. Or it get stuck here.
                     //begin retract
                     SD_if_begin_r <= 1'b0;
                     SD_if_send_rd_cmd_r <= 1'b0;
@@ -302,10 +307,9 @@ always @(posedge clk_4M or negedge rst_n) begin
 
                     end else begin
                         pic_state <= PIC_STATE_wait_uart;
-                        ctl_ready_r <= 1'b1;
                         
                     end
-                end else if(if_busy & if_begin) begin
+                end else if(if_all_busy & if_begin) begin
                     //begin retract
                     stream_op_cnt_r <= stream_op_cnt_next;
                     SD_if_begin_r <= 1'b0;
@@ -320,16 +324,23 @@ always @(posedge clk_4M or negedge rst_n) begin
                     //objective complete
                     //start next and switch state
                     pic_state <= PIC_STATE_sd_lcd_cmd;
-                    ctl_ready_r <= 1'b1;
+                    ctl_ready_r <= 1'b0;
                     case ({ctl_incr_r, ctl_decr_r})
                         2'b01: SD_if_im_idx_r <= im_idx_decr;
                         2'b10: SD_if_im_idx_r <= im_idx_incr;
                         default: SD_if_im_idx_r <= SD_if_im_idx_r;
                     endcase
                 
+                    //start sd_lcd pre stream routine
+
+                    SD_if_begin_r <= 1'b1;
+                    SD_if_send_rd_cmd_r <= 1'b1;
+                    LCD_if_begin_r <= 1'b1;
+                    LCD_if_send_px_cmd_r <= 1'b1;
 
                 end else begin
                     pic_state <= pic_state;
+                    ctl_ready_r <= 1'b1;
                 end
             end 
             default: begin
