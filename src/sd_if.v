@@ -45,6 +45,8 @@ localparam SD_OP_BITS_px_cmd = 3'b010;
 localparam SD_OP_BITS_stream = 3'b100;
 
 
+localparam SD_BLK_OFF_TOP = 9'd300;
+
 wire [2:0]sd_op_bits;
 reg [2:0]sd_op_bits_r;
 assign sd_op_bits = {stream_512B,read_cmd,init};
@@ -160,13 +162,13 @@ always @(posedge clk) begin
     stream_busy_r <= stream_busy;
     spi_miso_r <= spi_miso;
     spi_busy_r <= spi_busy;
-    end_of_frame_r <= end_of_frame;
 end
 
 assign if_busy = |(sd_state ^ SD_STATE_idle);
 
 always @(posedge clk or negedge rst_n) begin
     if(~rst_n) begin
+        end_of_frame_r <= end_of_frame;
         sd_state <= SD_STATE_idle;
         spi_wide_r <= 1'b0;
         spi_begin_r <= 1'b0;
@@ -200,6 +202,7 @@ always @(posedge clk or negedge rst_n) begin
                             state_op_top <= SD_OP_TOP_strm_512_aquire;
                             spi_wide_r <= 1'b1;
                             spi_mosi_r <=   {32'hFFFFFFFF};
+                            end_of_frame_r <= end_of_frame;
                         end
                         default: begin
                             sd_state <= SD_STATE_idle;
