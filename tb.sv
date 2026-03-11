@@ -1401,6 +1401,7 @@ end
 wire sd_spi_clk;
 wire sd_spi_mosi;
 reg sd_spi_miso;
+wire sd_spi_miso_w;
 wire sd_spi_cs;
 
 wire lcd_spi_clk;
@@ -1422,7 +1423,7 @@ pic_chip_top dut (
     //SD spi
     /*output */.sd_spi_clk(sd_spi_clk),
     /*output */.sd_spi_mosi(sd_spi_mosi),
-    /*input */.sd_spi_miso(sd_spi_miso),
+    /*input */.sd_spi_miso(sd_spi_miso_w),
     /*output */.sd_spi_cs(sd_spi_cs),
 
     //LCD spi
@@ -1461,6 +1462,15 @@ lcd_mock verify_dev(
     /*output reg *///.correct(),
     /*output wire [31:0]*///.current_byte()
 );
+
+
+sd_mock sd_card(
+    /*input  logic */.cs_n(sd_spi_cs),   // Chip Select (active low)
+    /*input  logic */.sck(sd_spi_clk),    // SPI Clock
+    /*input  logic */.mosi(sd_spi_mosi),   // Master Out Slave In
+    /*output logic */.miso(sd_spi_miso_w)    // Master In Slave Out
+);
+
 
 
 
