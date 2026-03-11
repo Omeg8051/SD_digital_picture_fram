@@ -263,7 +263,7 @@ always @(posedge clk or negedge rst_n) begin
                         spi_mosi_r <= {24'h0,lcd_init_routine_seq[state_op_cnt][7:0]};
                         spi_begin_r <= 1'b1;
                         lcd_data_cmd_r <= lcd_init_routine_seq[state_op_cnt][8];
-                        `ifndef DISABLE_DELAY
+                        `ifndef TEST_BENCH_DEBUG
                         if(lcd_init_routine_seq[state_op_cnt][9])begin
                             lcd_cmd_del_cnt <= LCD_CMD_DEL_50MS_COUNT;
                         end else if(lcd_init_routine_seq[state_op_cnt][10])begin

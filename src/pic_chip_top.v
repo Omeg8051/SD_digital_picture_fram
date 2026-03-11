@@ -24,6 +24,8 @@ module pic_chip_top (
 
     //debug
     output [2:0]ip_c_state,
+    output wire [3:0]lcd_cmd,
+    output wire [3:0]sd_cmd,
 
     output uart_samp
 );
@@ -118,6 +120,9 @@ sd_if sd_if_0(
 );
 
 
+assign sd_cmd = {SD_if_end_of_frame,SD_if_stream,SD_if_send_rd_cmd,SD_if_init};
+
+
 spi_front sd_phy_0(
     .spi_clk_in(clk_1M),
     .rst_n(rst_n),
@@ -178,6 +183,8 @@ lcd_if lcd_if_0(
     .spi_cs(lcd_spi_cs)
 );
 
+assign lcd_cmd = {LCD_if_stream,LCD_if_end_of_frame,LCD_if_send_px_cmd,LCD_if_init};
+
 
 spi_front lcd_phy_0(
     .spi_clk_in(clk_1M),
@@ -237,6 +244,7 @@ ctl_if dut_1(
     .ctl_incr(CTL_if_incr),
     .ctl_decr(CTL_if_decr)
 );
+
 
 
 

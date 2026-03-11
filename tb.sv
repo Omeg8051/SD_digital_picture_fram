@@ -8,11 +8,11 @@
 //`define TEST_LCD_IF_STREAM_512B_END
 //`define TEST_LCD_IF_NOP
 //`define TEST_SD_IF_RD_BLK
-`define TEST_SD_IF_STRM_512B
-`define TEST_SD_IF_STRM_512B_COOP
+//`define TEST_SD_IF_STRM_512B
+//`define TEST_SD_IF_STRM_512B_COOP
 //`define TEST_SD_IF_INIT
 //`define TEST_PIC_STATE_TF
-//`define TEST_CHIP_TOP
+`define TEST_CHIP_TOP
 
 `define DISABLE_DELAY
 module tb;
@@ -395,6 +395,26 @@ lcd_if dut_if(
     .spi_cs(spi_bus_cs)
 );
 
+lcd_mock verify_dev(
+    /*input wire */.clk(clk),
+    /*input wire */.rst_n(rst_n),
+
+    //spi_bus
+    /*input wire */.spi_clk(spi_bus_clk),
+    /*input wire */.spi_mosi(spi_bus_mosi),
+    /*input wire */.spi_cs(spi_bus_cs),
+    /*input wire */.spi_d1c0(lcd_data_cmd),
+
+    //control port
+    /*input wire */.test_init(lcd_init),
+    /*input wire */.test_pixel(lcd_px),
+    /*input wire */.test_stream(lcd_stream),
+
+    //status port
+    /*output reg *///.correct(),
+    /*output wire [31:0]*///.current_byte()
+);
+
 `elsif TEST_LCD_IF_INIT_SEQ
 reg clk;
 reg rst_n;
@@ -488,6 +508,26 @@ lcd_if dut_if(
     .spi_cs(spi_bus_cs)
 );
 
+
+lcd_mock verify_dev(
+    /*input wire */.clk(clk),
+    /*input wire */.rst_n(rst_n),
+
+    //spi_bus
+    /*input wire */.spi_clk(spi_bus_clk),
+    /*input wire */.spi_mosi(spi_bus_mosi),
+    /*input wire */.spi_cs(spi_bus_cs),
+    /*input wire */.spi_d1c0(lcd_data_cmd),
+
+    //control port
+    /*input wire */.test_init(lcd_init),
+    /*input wire */.test_pixel(lcd_px),
+    /*input wire */.test_stream(lcd_stream)
+
+    //status port
+    /*output reg *///.correct(),
+    /*output wire [31:0]*///.current_byte()
+);
 
 
 `elsif TEST_LCD_IF_STREAM_512B
@@ -1051,7 +1091,7 @@ initial begin
     #10 sd_begin = 1'b0;
 
     
-    #1910 spi_bus_miso = 1'b0;
+    #3000 spi_bus_miso = 1'b0;
     #30 spi_bus_miso = 1'b1;
 
     #1129 spi_bus_miso = 1'b0;
@@ -1167,7 +1207,7 @@ always @(posedge clk or negedge rst_n)begin
         
     end else begin
         SD_if_busy <= SD_if_begin;
-        LCD_if_busy <= LCD_if_begin;
+        LCD_if_busy <= SD_if_busy;
         
     end
     
@@ -1244,10 +1284,58 @@ end
 
 initial begin
     clk = 1'b0; rst_n = 1'b1; ready <= 1'b0; rx <= 1'b1;
+    sd_spi_miso = 1'b1;
+    #50 rst_n = 1'b0; rx = 1'b1;
+    #50 rst_n = 1'b1; rx = 1'b1;
 
-    #50 rst_n = 1'b0; rx <= 1'b1;
-    #50 rst_n = 1'b1; rx <= 1'b1;
+    #3000 sd_spi_miso = 1'b0;
+    #30 sd_spi_miso = 1'b1;
 
+    #1129 sd_spi_miso = 1'b0;
+    #30 sd_spi_miso = 1'b1;
+
+    #1510 sd_spi_miso = 1'b0;
+    #30 sd_spi_miso = 1'b1;
+
+    #1510 sd_spi_miso = 1'b0;
+    #30 sd_spi_miso = 1'b1;
+
+    #1334 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+
+    #822 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+
+    #822 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+
+    #48000 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+    #822 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+
+    #48000 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+    #822 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+
+    #48000 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+    #822 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+
+    #48000 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+    #822 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+
+    #48000 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+    #822 sd_spi_miso = 1'b0;
+    #120 sd_spi_miso = 1'b1;
+
+    #48000 $finish();
+    #120 sd_spi_miso = 1'b1;
     
     #40000 rx = 1'b0;//start
     #160 rx = 1'b1;//bit 0
@@ -1322,6 +1410,8 @@ reg lcd_spi_miso;
 wire lcd_spi_cs;
 wire lcd_cm_da;
 wire sys_wait_led;
+wire [3:0]lcd_cmd;
+wire [3:0]sd_cmd;
 
 
 pic_chip_top dut (
@@ -1343,11 +1433,35 @@ pic_chip_top dut (
 
     //status
     /*output */.sys_wait_led(sys_wait_led),
+    /*output wire [3:0] */.lcd_cmd(lcd_cmd),
+    /*output wire [3:0] */.sd_cmd(sd_cmd),
 
     //UART pins
     /*output *///.uart_tx(),
     /*input */.uart_rx(rx)
 );
+
+
+lcd_mock verify_dev(
+    /*input wire */.clk(clk),
+    /*input wire */.rst_n(rst_n),
+
+    //spi_bus
+    /*input wire */.spi_clk(lcd_spi_clk),
+    /*input wire */.spi_mosi(lcd_spi_mosi),
+    /*input wire */.spi_cs(lcd_spi_cs),
+    /*input wire */.spi_d1c0(lcd_cm_da),
+
+    //control port
+    /*input wire */.test_init(lcd_cmd[0]),
+    /*input wire */.test_pixel(lcd_cmd[1]),
+    /*input wire */.test_stream(lcd_cmd[2])
+
+    //status port
+    /*output reg *///.correct(),
+    /*output wire [31:0]*///.current_byte()
+);
+
 
 
 
