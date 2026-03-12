@@ -44,8 +44,12 @@ localparam SD_OP_BITS_init = 3'b001;
 localparam SD_OP_BITS_px_cmd = 3'b010;
 localparam SD_OP_BITS_stream = 3'b100;
 
-
+`ifdef TEST_BENCH_DEBUG
+localparam SD_BLK_OFF_TOP = 9'd4;
+`else
 localparam SD_BLK_OFF_TOP = 9'd300;
+`endif
+
 
 wire [2:0]sd_op_bits;
 reg [2:0]sd_op_bits_r;

@@ -260,7 +260,13 @@ always @(posedge clk_4M or negedge rst_n) begin
                     //objective complete
                     //start next and switch state
                     pic_state <= PIC_STATE_stream;
+
+                    `ifdef TEST_BENCH_DEBUG
+                    stream_op_cnt_r <= 9'd5;
+                    `else
                     stream_op_cnt_r <= 9'd301;
+                    `endif
+
                     //stream_op_cnt_r <= 9'd4;
 
                     SD_if_begin_r <= 1'b1;
