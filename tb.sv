@@ -1265,6 +1265,7 @@ d_pic_f dut_ip(
 `elsif TEST_CHIP_TOP
 
 reg clk;
+reg clk_fast;
 reg rst_n;
 reg rx;
 reg ready;
@@ -1272,7 +1273,13 @@ wire [7:0]data_rx;
 wire valid;
 initial begin
     forever begin
-        #5 clk = ~clk;
+        #29 clk = ~clk;
+    end
+end
+
+initial begin
+    forever begin
+        #2 clk_fast = ~clk_fast;
     end
 end
 
@@ -1283,6 +1290,7 @@ initial begin
 end
 
 initial begin
+    clk_fast = 1'b0;
     clk = 1'b0; rst_n = 1'b1; ready <= 1'b0; rx <= 1'b1;
     sd_spi_miso = 1'b1;
     #50 rst_n = 1'b0; rx = 1'b1;
@@ -1334,7 +1342,7 @@ initial begin
     #822 sd_spi_miso = 1'b0;
     #120 sd_spi_miso = 1'b1;
 
-    #48000 $finish();
+    #4800000 $finish();
     #120 sd_spi_miso = 1'b1;
     
     #40000 rx = 1'b0;//start
