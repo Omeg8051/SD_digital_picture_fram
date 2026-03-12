@@ -30,6 +30,9 @@ reg [11:0]lcd_px_routine_seq[10:0];
 reg [11:0]lcd_init_routine_seq[49:0];
 //test with no delay
 
+localparam IDX_MAX_init = 50;
+localparam IDX_MAX_px = 11;
+
 always @(negedge rst_n ) begin
     lcd_px_routine_seq[0] <= {4'h0,8'h2A};
     lcd_px_routine_seq[1] <= {4'h1,8'h00};
@@ -96,6 +99,7 @@ always @(negedge rst_n ) begin
 
 end
 
+
 reg [7:0]spi_byte;
 reg [31:0]bit_counter;
 wire byte_bound;
@@ -105,6 +109,9 @@ assign byte_idx = bit_counter[31:3];
 wire [7:0]spi_current_byte;
 assign spi_current_byte = {spi_byte[6:0],spi_mosi};
 assign current_byte = spi_current_byte;
+
+wire no_more_display;
+assign no_more_display = byte_idx >= (test_init_r? IDX_MAX_init : IDX_MAX_px);
 
 reg [7:0]golden_byte;
 
@@ -156,7 +163,7 @@ always @(posedge clk or negedge rst_n) begin
     end else begin
         if(~spi_cs) begin
             if(byte_bound) begin
-                $display("%s ,status: %b ,idx: %0d ,golden: 0x%0h ,recieved: 0x%0h",test_init_r? "init_seq":"pixl_seq",correct,byte_idx,golden_byte,spi_current_byte);
+                if(~no_more_display)$display("%s ,status: %b ,idx: %0d ,golden: 0x%0h ,recieved: 0x%0h",test_init_r? "init_seq":"pixl_seq",correct,byte_idx,golden_byte,spi_current_byte);
                 
                 
             end else begin
