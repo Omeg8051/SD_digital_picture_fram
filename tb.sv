@@ -1292,117 +1292,10 @@ end
 initial begin
     clk_fast = 1'b0;
     clk = 1'b0; rst_n = 1'b1; ready <= 1'b0; rx <= 1'b1;
-    sd_spi_miso = 1'b1;
     #50 rst_n = 1'b0; rx = 1'b1;
     #50 rst_n = 1'b1; rx = 1'b1;
 
-    #3000 sd_spi_miso = 1'b0;
-    #30 sd_spi_miso = 1'b1;
-
-    #1129 sd_spi_miso = 1'b0;
-    #30 sd_spi_miso = 1'b1;
-
-    #1510 sd_spi_miso = 1'b0;
-    #30 sd_spi_miso = 1'b1;
-
-    #1510 sd_spi_miso = 1'b0;
-    #30 sd_spi_miso = 1'b1;
-
-    #1334 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-
-    #822 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-
-    #822 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-
-    #48000 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-    #822 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-
-    #48000 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-    #822 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-
-    #48000 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-    #822 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-
-    #48000 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-    #822 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-
-    #48000 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-    #822 sd_spi_miso = 1'b0;
-    #120 sd_spi_miso = 1'b1;
-
     #4800000 $finish();
-    #120 sd_spi_miso = 1'b1;
-    
-    #40000 rx = 1'b0;//start
-    #160 rx = 1'b1;//bit 0
-    #160 rx = 1'b0;//bit 1
-    #160 rx = 1'b1;//bit 2
-    #160 rx = 1'b0;//bit 3
-    #160 rx = 1'b1;//bit 4
-    #160 rx = 1'b0;//bit 5
-    #160 rx = 1'b1;//bit 6
-    #160 rx = 1'b0;//bit 7
-    #160 rx = 1'b1;//stop bit
-
-    #40000 rx = 1'b0;//start
-    #160 rx = 1'b1;//bit 0
-    #160 rx = 1'b1;//bit 1
-    #160 rx = 1'b1;//bit 2
-    #160 rx = 1'b1;//bit 3
-    #160 rx = 1'b0;//bit 4
-    #160 rx = 1'b0;//bit 5
-    #160 rx = 1'b0;//bit 6
-    #160 rx = 1'b0;//bit 7
-    #160 rx = 1'b1;//stop bit
-
-    #40000 rx = 1'b0;//start
-    #160 rx = 1'b0;//bit 0
-    #160 rx = 1'b1;//bit 1
-    #160 rx = 1'b1;//bit 2
-    #160 rx = 1'b0;//bit 3
-    #160 rx = 1'b1;//bit 4
-    #160 rx = 1'b0;//bit 5
-    #160 rx = 1'b0;//bit 6
-    #160 rx = 1'b1;//bit 7
-    #160 rx = 1'b1;//stop bit
-    
-    //test hold data before ready function;
-    #40000 rx = 1'b0;//start
-    #160 rx = 1'b1;//bit 0
-    #160 rx = 1'b1;//bit 1
-    #160 rx = 1'b1;//bit 2
-    #160 rx = 1'b1;//bit 3
-    #160 rx = 1'b0;//bit 4
-    #160 rx = 1'b0;//bit 5
-    #160 rx = 1'b0;//bit 6
-    #160 rx = 1'b0;//bit 7
-    #160 rx = 1'b1;//stop bit
-
-    #40000 rx = 1'b0;//start
-    #160 rx = 1'b1;//bit 0
-    #160 rx = 1'b0;//bit 1
-    #160 rx = 1'b0;//bit 2
-    #160 rx = 1'b1;//bit 3
-    #160 rx = 1'b0;//bit 4
-    #160 rx = 1'b1;//bit 5
-    #160 rx = 1'b1;//bit 6
-    #160 rx = 1'b0;//bit 7
-    #160 rx = 1'b1;//stop bit
-
-    
-    #200 $finish();
 end
 
 
@@ -1414,7 +1307,6 @@ wire sd_spi_cs;
 
 wire lcd_spi_clk;
 wire lcd_spi_mosi;
-reg lcd_spi_miso;
 
 wire lcd_spi_cs;
 wire lcd_cm_da;
