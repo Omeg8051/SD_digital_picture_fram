@@ -50,7 +50,6 @@ wire CTL_if_ready;
 
 d_pic_f main_fsm(
     /*input */.clk_4M(clk_4M),
-    /*input */.clk_1M(clk_1M),
     /*input */.rst_n(rst_n),
 
     //SD if port

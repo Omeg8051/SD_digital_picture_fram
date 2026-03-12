@@ -1,7 +1,6 @@
 
 module d_pic_f (
     input clk_4M,
-    input clk_1M,
     input rst_n,
 
     //SD if port
