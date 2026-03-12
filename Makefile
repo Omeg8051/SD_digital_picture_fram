@@ -2,7 +2,7 @@ default: compile execute display
 
 
 compile: $(wildcard *.v) $(wildcard *.sv) $(wildcard ./src/*.v) $(wildcard ./src/tb_model/*.sv)
-	iverilog $^ -D TEST_BENCH_DEBUG
+	iverilog $^ -D TEST_BENCH_DEBUG -g2012
 
 execute: 
 	vvp a.out
