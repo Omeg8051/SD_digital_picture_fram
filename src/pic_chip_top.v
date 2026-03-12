@@ -30,18 +30,142 @@ module pic_chip_top (
     output uart_samp
 );
 
-wire [3:0]SD_if_im_idx;
-wire SD_if_init;
-wire SD_if_send_rd_cmd;
-wire SD_if_stream;
-wire SD_if_end_of_frame;
-wire SD_if_begin;
+wire [3:0]SD_if_im_idx_fast;
+wire SD_if_init_fast;
+wire SD_if_send_rd_cmd_fast;
+wire SD_if_stream_fast;
+wire SD_if_end_of_frame_fast;
+wire SD_if_begin_fast;
+wire SD_if_busy_fast;
 
-wire LCD_if_init;
-wire LCD_if_send_px_cmd;
-wire LCD_if_stream;
-wire LCD_if_end_of_frame;
-wire LCD_if_begin;
+
+wire [3:0]SD_if_im_idx_slow;
+wire SD_if_init_slow;
+wire SD_if_send_rd_cmd_slow;
+wire SD_if_stream_slow;
+wire SD_if_end_of_frame_slow;
+wire SD_if_begin_slow;
+wire SD_if_busy_slow;
+
+wire [4:0]sd_if_ctl_sync;
+wire sd_if_begin_allow;
+assign sd_if_begin_allow = &sd_if_ctl_sync;
+
+cdc_dff_f2s sd_if_cdc_0(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire */.sync(sd_if_ctl_sync[0]),
+    /*input wire */.allow(1'b1),
+    /*output wire */.data_out(SD_if_init_slow),
+    /*input wire */.data_in(SD_if_init_fast));
+cdc_dff_f2s sd_if_cdc_1(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire */.sync(sd_if_ctl_sync[1]),
+    /*input wire */.allow(1'b1),
+    /*output wire */.data_out(SD_if_send_rd_cmd_slow),
+    /*input wire */.data_in(SD_if_send_rd_cmd_fast));
+cdc_dff_f2s sd_if_cdc_2(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire */.sync(sd_if_ctl_sync[2]),
+    /*input wire */.allow(1'b1),
+    /*output wire */.data_out(SD_if_stream_slow),
+    /*input wire */.data_in(SD_if_stream_fast));
+cdc_dff_f2s sd_if_cdc_3(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire */.sync(sd_if_ctl_sync[3]),
+    /*input wire */.allow(1'b1),
+    /*output wire */.data_out(SD_if_end_of_frame_slow),
+    /*input wire */.data_in(SD_if_end_of_frame_fast));
+cdc_dff_f2s sd_if_cdc_4(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire *///.sync(),
+    /*input wire */.allow(sd_if_begin_allow),
+    /*output wire */.data_out(SD_if_begin_slow),
+    /*input wire */.data_in(SD_if_begin_fast));
+
+cdc_dff_f2s_x4 sd_imid_0(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire */.sync(sd_if_ctl_sync[4]),
+    /*input wire */.allow(1'b1),
+    /*output wire */.data_out(SD_if_im_idx_slow),
+    /*input wire */.data_in(SD_if_im_idx_fast));
+
+assign SD_if_busy_fast = SD_if_busy_slow;
+
+wire LCD_if_init_fast;
+wire LCD_if_send_px_cmd_fast;
+wire LCD_if_stream_fast;
+wire LCD_if_end_of_frame_fast;
+wire LCD_if_begin_fast;
+wire LCD_if_busy_fast;
+
+wire LCD_if_init_slow;
+wire LCD_if_send_px_cmd_slow;
+wire LCD_if_stream_slow;
+wire LCD_if_end_of_frame_slow;
+wire LCD_if_begin_slow;
+wire LCD_if_busy_slow;
+
+wire [3:0]lcd_if_ctl_sync;
+wire lcd_if_begin_allow;
+assign lcd_if_begin_allow = &lcd_if_ctl_sync;
+
+
+cdc_dff_f2s lcd_if_cdc_0(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire */.sync(lcd_if_ctl_sync[0]),
+    /*input wire */.allow(1'b1),
+    /*output wire */.data_out(LCD_if_init_slow),
+    /*input wire */.data_in(LCD_if_init_fast));
+cdc_dff_f2s lcd_if_cdc_1(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire */.sync(lcd_if_ctl_sync[1]),
+    /*input wire */.allow(1'b1),
+    /*output wire */.data_out(LCD_if_send_px_cmd_slow),
+    /*input wire */.data_in(LCD_if_send_px_cmd_fast));
+cdc_dff_f2s lcd_if_cdc_2(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire */.sync(lcd_if_ctl_sync[2]),
+    /*input wire */.allow(1'b1),
+    /*output wire */.data_out(LCD_if_stream_slow),
+    /*input wire */.data_in(LCD_if_stream_fast));
+cdc_dff_f2s lcd_if_cdc_3(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire */.sync(lcd_if_ctl_sync[3]),
+    /*input wire */.allow(1'b1),
+    /*output wire */.data_out(LCD_if_end_of_frame_slow),
+    /*input wire */.data_in(LCD_if_end_of_frame_fast));
+cdc_dff_f2s lcd_if_cdc_4(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*input wire */.clk_slow(clk_1M),
+    /*output wire *///.sync(),
+    /*input wire */.allow(lcd_if_begin_allow),
+    /*output wire */.data_out(LCD_if_begin_slow),
+    /*input wire */.data_in(LCD_if_begin_fast));
+
+assign LCD_if_busy_fast = LCD_if_busy_slow;
+
+
 
 wire CTL_if_decr;
 wire CTL_if_incr;
@@ -53,21 +177,21 @@ d_pic_f main_fsm(
     /*input */.rst_n(rst_n),
 
     //SD if port
-    /*output [3:0]*/.SD_if_im_idx(SD_if_im_idx),
-    /*output */.SD_if_init(SD_if_init),
-    /*output */.SD_if_send_rd_cmd(SD_if_send_rd_cmd),
-    /*output */.SD_if_stream(SD_if_stream),
-    /*output */.SD_if_end_of_frame(SD_if_end_of_frame),
-    /*output */.SD_if_begin(SD_if_begin),
-    /*input */.SD_if_busy(SD_if_busy),
+    /*output [3:0]*/.SD_if_im_idx(SD_if_im_idx_fast),
+    /*output */.SD_if_init(SD_if_init_fast),
+    /*output */.SD_if_send_rd_cmd(SD_if_send_rd_cmd_fast),
+    /*output */.SD_if_stream(SD_if_stream_fast),
+    /*output */.SD_if_end_of_frame(SD_if_end_of_frame_fast),
+    /*output */.SD_if_begin(SD_if_begin_fast),
+    /*input */.SD_if_busy(SD_if_busy_fast),
     
     //LCD if port
-    /*output */.LCD_if_init(LCD_if_init),
-    /*output */.LCD_if_send_px_cmd(LCD_if_send_px_cmd),
-    /*output */.LCD_if_stream(LCD_if_stream),
-    /*output */.LCD_if_end_of_frame(LCD_if_end_of_frame),
-    /*output */.LCD_if_begin(LCD_if_begin),
-    /*input */.LCD_if_busy(LCD_if_busy),
+    /*output */.LCD_if_init(LCD_if_init_fast),
+    /*output */.LCD_if_send_px_cmd(LCD_if_send_px_cmd_fast),
+    /*output */.LCD_if_stream(LCD_if_stream_fast),
+    /*output */.LCD_if_end_of_frame(LCD_if_end_of_frame_fast),
+    /*output */.LCD_if_begin(LCD_if_begin_fast),
+    /*input */.LCD_if_busy(LCD_if_busy_fast),
 
     //UART control port
     /*input */.ctl_decr(CTL_if_decr),
@@ -93,15 +217,15 @@ sd_if sd_if_0(
     /*input */.rst_n(rst_n),
     
     //actions
-    /*input */.init(SD_if_init),         //init SD card
-    /*input */.read_cmd(SD_if_send_rd_cmd),     //send read command for blk_addr
-    /*input */.stream_512B(SD_if_stream),   //stream 512 bytes at 4 bytes each stream trigger
-    /*input */.end_of_frame(SD_if_end_of_frame),   //stream 512 bytes at 4 bytes each stream trigger
+    /*input */.init(SD_if_init_slow),         //init SD card
+    /*input */.read_cmd(SD_if_send_rd_cmd_slow),     //send read command for blk_addr
+    /*input */.stream_512B(SD_if_stream_slow),   //stream 512 bytes at 4 bytes each stream trigger
+    /*input */.end_of_frame(SD_if_end_of_frame_slow),   //stream 512 bytes at 4 bytes each stream trigger
 
     //flow control
-    /*input [3:0]*/.img_id(SD_if_im_idx),
-    /*input */.if_begin(SD_if_begin),
-    /*output */.if_busy(SD_if_busy),
+    /*input [3:0]*/.img_id(SD_if_im_idx_slow),
+    /*input */.if_begin(SD_if_begin_slow),
+    /*output */.if_busy(SD_if_busy_slow),
 
     //data stream
     /*output [31:0]*/.stream_data({stream_data[23:16],stream_data[31:24],stream_data[7:0],stream_data[15:8]}),
@@ -119,7 +243,7 @@ sd_if sd_if_0(
 );
 
 
-assign sd_cmd = {SD_if_end_of_frame,SD_if_stream,SD_if_send_rd_cmd,SD_if_init};
+assign sd_cmd = {SD_if_end_of_frame_slow,SD_if_stream_slow,SD_if_send_rd_cmd_slow,SD_if_init_slow};
 
 
 spi_front sd_phy_0(
@@ -156,14 +280,14 @@ lcd_if lcd_if_0(
     .rst_n(rst_n),
     
     //actions
-    .init(LCD_if_init),             //initialize LCD
-    .px_stream_cmd(LCD_if_send_px_cmd),    //transmit pixel commands
-    .stream_512B(LCD_if_stream),      //stream 512 bytes at 4 bytes each stream trigger
-    .end_of_frame(LCD_if_end_of_frame),      //pull high when initiating the last block transfer.
+    .init(LCD_if_init_slow),             //initialize LCD
+    .px_stream_cmd(LCD_if_send_px_cmd_slow),    //transmit pixel commands
+    .stream_512B(LCD_if_stream_slow),      //stream 512 bytes at 4 bytes each stream trigger
+    .end_of_frame(LCD_if_end_of_frame_slow),      //pull high when initiating the last block transfer.
 
     //flow control
-    .if_begin(LCD_if_begin),
-    .if_busy(LCD_if_busy),
+    .if_begin(LCD_if_begin_slow),
+    .if_busy(LCD_if_busy_slow),
 
     //data stream
     .stream_data(stream_data),
@@ -182,7 +306,7 @@ lcd_if lcd_if_0(
     .spi_cs(lcd_spi_cs)
 );
 
-assign lcd_cmd = {LCD_if_stream,LCD_if_end_of_frame,LCD_if_send_px_cmd,LCD_if_init};
+assign lcd_cmd = {LCD_if_stream_slow,LCD_if_end_of_frame_slow,LCD_if_send_px_cmd_slow,LCD_if_init_slow};
 
 
 spi_front lcd_phy_0(
