@@ -53,51 +53,33 @@ assign sd_if_begin_allow = &sd_if_ctl_sync;
 
 cdc_dff_f2s sd_if_cdc_0(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire */.sync(sd_if_ctl_sync[0]),
-    /*input wire */.allow(1'b1),
     /*output wire */.data_out(SD_if_init_slow),
     /*input wire */.data_in(SD_if_init_fast));
 cdc_dff_f2s sd_if_cdc_1(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire */.sync(sd_if_ctl_sync[1]),
-    /*input wire */.allow(1'b1),
     /*output wire */.data_out(SD_if_send_rd_cmd_slow),
     /*input wire */.data_in(SD_if_send_rd_cmd_fast));
 cdc_dff_f2s sd_if_cdc_2(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire */.sync(sd_if_ctl_sync[2]),
-    /*input wire */.allow(1'b1),
     /*output wire */.data_out(SD_if_stream_slow),
     /*input wire */.data_in(SD_if_stream_fast));
 cdc_dff_f2s sd_if_cdc_3(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire */.sync(sd_if_ctl_sync[3]),
-    /*input wire */.allow(1'b1),
     /*output wire */.data_out(SD_if_end_of_frame_slow),
     /*input wire */.data_in(SD_if_end_of_frame_fast));
 cdc_dff_f2s sd_if_cdc_4(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire *///.sync(),
-    /*input wire */.allow(sd_if_begin_allow),
     /*output wire */.data_out(SD_if_begin_slow),
     /*input wire */.data_in(SD_if_begin_fast));
 
 cdc_dff_f2s_x4 sd_imid_0(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire */.sync(sd_if_ctl_sync[4]),
-    /*input wire */.allow(1'b1),
     /*output wire */.data_out(SD_if_im_idx_slow),
     /*input wire */.data_in(SD_if_im_idx_fast));
 
@@ -124,42 +106,27 @@ assign lcd_if_begin_allow = &lcd_if_ctl_sync;
 
 cdc_dff_f2s lcd_if_cdc_0(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire */.sync(lcd_if_ctl_sync[0]),
-    /*input wire */.allow(1'b1),
     /*output wire */.data_out(LCD_if_init_slow),
     /*input wire */.data_in(LCD_if_init_fast));
 cdc_dff_f2s lcd_if_cdc_1(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire */.sync(lcd_if_ctl_sync[1]),
-    /*input wire */.allow(1'b1),
     /*output wire */.data_out(LCD_if_send_px_cmd_slow),
     /*input wire */.data_in(LCD_if_send_px_cmd_fast));
 cdc_dff_f2s lcd_if_cdc_2(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire */.sync(lcd_if_ctl_sync[2]),
-    /*input wire */.allow(1'b1),
     /*output wire */.data_out(LCD_if_stream_slow),
     /*input wire */.data_in(LCD_if_stream_fast));
 cdc_dff_f2s lcd_if_cdc_3(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire */.sync(lcd_if_ctl_sync[3]),
-    /*input wire */.allow(1'b1),
     /*output wire */.data_out(LCD_if_end_of_frame_slow),
     /*input wire */.data_in(LCD_if_end_of_frame_fast));
 cdc_dff_f2s lcd_if_cdc_4(
     /*input wire */.rst_n(rst_n),
-    /*input wire */.clk_fast(clk_4M),
     /*input wire */.clk_slow(clk_1M),
-    /*output wire *///.sync(),
-    /*input wire */.allow(lcd_if_begin_allow),
     /*output wire */.data_out(LCD_if_begin_slow),
     /*input wire */.data_in(LCD_if_begin_fast));
 
