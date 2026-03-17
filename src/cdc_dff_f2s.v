@@ -24,6 +24,32 @@ assign data_out = data_slow_ff2;
     
 endmodule
 
+module cdc_dff_s2f (
+    input wire rst_n,
+    input wire clk_fast,
+
+    output wire data_out,
+    input wire data_in
+);
+
+reg data_fast_ff1;
+reg data_fast_ff2;
+
+
+always @(posedge clk_fast or negedge rst_n) begin
+    if(~rst_n) begin
+        data_fast_ff1 <= 1'b0;
+        data_fast_ff2 <= 1'b0;
+    end else begin
+        data_fast_ff1 <= data_in;
+        data_fast_ff2 <= data_fast_ff1;
+    end
+end
+
+assign data_out = data_fast_ff2;
+    
+endmodule
+
 module cdc_dff_f2s_x4(
     input wire rst_n,
     input wire clk_fast,
