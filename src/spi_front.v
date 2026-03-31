@@ -4,7 +4,7 @@ module spi_front (
 
     //spi interface
     output spi_clk_o,
-    output spi_mosi_o,
+    output reg spi_mosi_o,
     input spi_miso_i,
 
     //data interface
@@ -28,13 +28,14 @@ reg [31:0]spi_rx_data_r;
 assign data_miso = spi_rx_data_r;
 
 reg spi_state;
-reg [4:0] spi_bit_ptr;
+reg [5:0] spi_bit_ptr;
 reg spi_clk_gate;
+reg spi_clk_gate_neg;
 reg spi_busy_r;
 reg [31:0]spi_tx_data;
 
 assign spi_busy = spi_busy_r;
-assign spi_clk_o = spi_clk_in & spi_clk_gate;
+assign spi_clk_o = spi_clk_in & spi_clk_gate_neg;
 
 reg spi_begin_r;
 
@@ -47,7 +48,7 @@ always @(posedge spi_clk_in or negedge rst_n) begin
 end
 
 
-always @(negedge spi_clk_in or negedge rst_n) begin
+always @(posedge spi_clk_in or negedge rst_n) begin
     if(~rst_n) begin
         spi_state <= SPI_STATE_IDLE;
         spi_bit_ptr <= 3'b0;
@@ -61,6 +62,7 @@ always @(negedge spi_clk_in or negedge rst_n) begin
                 if(spi_begin_r)begin
                     spi_state <= SPI_STATE_ACTIVE;
                     spi_bit_ptr <= {{2{spi_wide}},3'h7};
+                    //spi_bit_ptr <= spi_wide? 6'h20 : 6'h8;
                     spi_clk_gate <= 1'b1;
                     spi_busy_r <= 1'b1;
                     spi_tx_data <= data_mosi;
@@ -90,40 +92,49 @@ always @(negedge spi_clk_in or negedge rst_n) begin
 end
 
 reg spi_mosi_r;
-assign spi_mosi_o = spi_mosi_r;
+//assign spi_mosi_o = spi_mosi_r;
+always @(negedge spi_clk_in or negedge rst_n) begin
+    if(~rst_n)begin
+        spi_mosi_o <= 1'b1;
+        spi_clk_gate_neg <= 1'b0;
+    end else begin
+        spi_clk_gate_neg <= spi_clk_gate;
+        spi_mosi_o <= spi_mosi_r;
+    end
+end
 always @(*) begin
     case (spi_bit_ptr)
-        5'd1: spi_mosi_r = spi_tx_data[1];
-        5'd2: spi_mosi_r = spi_tx_data[2];
-        5'd3: spi_mosi_r = spi_tx_data[3];
-        5'd4: spi_mosi_r = spi_tx_data[4];
-        5'd5: spi_mosi_r = spi_tx_data[5];
-        5'd6: spi_mosi_r = spi_tx_data[6];
-        5'd7: spi_mosi_r = spi_tx_data[7];
-        5'd8: spi_mosi_r = spi_tx_data[8];
-        5'd9: spi_mosi_r = spi_tx_data[9];
-        5'd10: spi_mosi_r = spi_tx_data[10];
-        5'd11: spi_mosi_r = spi_tx_data[11];
-        5'd12: spi_mosi_r = spi_tx_data[12];
-        5'd13: spi_mosi_r = spi_tx_data[13];
-        5'd14: spi_mosi_r = spi_tx_data[14];
-        5'd15: spi_mosi_r = spi_tx_data[15];
-        5'd16: spi_mosi_r = spi_tx_data[16];
-        5'd17: spi_mosi_r = spi_tx_data[17];
-        5'd18: spi_mosi_r = spi_tx_data[18];
-        5'd19: spi_mosi_r = spi_tx_data[19];
-        5'd20: spi_mosi_r = spi_tx_data[20];
-        5'd21: spi_mosi_r = spi_tx_data[21];
-        5'd22: spi_mosi_r = spi_tx_data[22];
-        5'd23: spi_mosi_r = spi_tx_data[23];
-        5'd24: spi_mosi_r = spi_tx_data[24];
-        5'd25: spi_mosi_r = spi_tx_data[25];
-        5'd26: spi_mosi_r = spi_tx_data[26];
-        5'd27: spi_mosi_r = spi_tx_data[27];
-        5'd28: spi_mosi_r = spi_tx_data[28];
-        5'd29: spi_mosi_r = spi_tx_data[29];
-        5'd30: spi_mosi_r = spi_tx_data[30];
-        5'd31: spi_mosi_r = spi_tx_data[31];
+        6'd1: spi_mosi_r = spi_tx_data[1];
+        6'd2: spi_mosi_r = spi_tx_data[2];
+        6'd3: spi_mosi_r = spi_tx_data[3];
+        6'd4: spi_mosi_r = spi_tx_data[4];
+        6'd5: spi_mosi_r = spi_tx_data[5];
+        6'd6: spi_mosi_r = spi_tx_data[6];
+        6'd7: spi_mosi_r = spi_tx_data[7];
+        6'd8: spi_mosi_r = spi_tx_data[8];
+        6'd9: spi_mosi_r = spi_tx_data[9];
+        6'd10: spi_mosi_r = spi_tx_data[10];
+        6'd11: spi_mosi_r = spi_tx_data[11];
+        6'd12: spi_mosi_r = spi_tx_data[12];
+        6'd13: spi_mosi_r = spi_tx_data[13];
+        6'd14: spi_mosi_r = spi_tx_data[14];
+        6'd15: spi_mosi_r = spi_tx_data[15];
+        6'd16: spi_mosi_r = spi_tx_data[16];
+        6'd17: spi_mosi_r = spi_tx_data[17];
+        6'd18: spi_mosi_r = spi_tx_data[18];
+        6'd19: spi_mosi_r = spi_tx_data[19];
+        6'd20: spi_mosi_r = spi_tx_data[20];
+        6'd21: spi_mosi_r = spi_tx_data[21];
+        6'd22: spi_mosi_r = spi_tx_data[22];
+        6'd23: spi_mosi_r = spi_tx_data[23];
+        6'd24: spi_mosi_r = spi_tx_data[24];
+        6'd25: spi_mosi_r = spi_tx_data[25];
+        6'd26: spi_mosi_r = spi_tx_data[26];
+        6'd27: spi_mosi_r = spi_tx_data[27];
+        6'd28: spi_mosi_r = spi_tx_data[28];
+        6'd29: spi_mosi_r = spi_tx_data[29];
+        6'd30: spi_mosi_r = spi_tx_data[30];
+        6'd31: spi_mosi_r = spi_tx_data[31];
         default: spi_mosi_r = spi_tx_data[0];
     endcase
 end
