@@ -22,6 +22,11 @@ module spi_front (
 localparam SPI_STATE_IDLE = 0;
 localparam SPI_STATE_ACTIVE = 1;
 
+
+reg [31:0]spi_rx_data;
+reg [31:0]spi_rx_data_r;
+assign data_miso = spi_rx_data_r;
+
 reg spi_state;
 reg [4:0] spi_bit_ptr;
 reg spi_clk_gate;
@@ -123,9 +128,6 @@ always @(*) begin
     endcase
 end
 
-reg [31:0]spi_rx_data;
-reg [31:0]spi_rx_data_r;
-assign data_miso = spi_rx_data_r;
 always @(posedge spi_clk_in or negedge rst_n) begin
     if(~rst_n) begin
         spi_rx_data <= 8'b0;

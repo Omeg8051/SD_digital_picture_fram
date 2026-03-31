@@ -83,7 +83,13 @@ cdc_dff_f2s_x4 sd_imid_0(
     /*output wire */.data_out(SD_if_im_idx_slow),
     /*input wire */.data_in(SD_if_im_idx_fast));
 
-assign SD_if_busy_fast = SD_if_busy_slow;
+//assign SD_if_busy_fast = SD_if_busy_slow;
+
+cdc_dff_s2f sd_if_cdc_5(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*output wire */.data_out(SD_if_busy_fast),
+    /*input wire */.data_in(SD_if_busy_slow));
 
 wire LCD_if_init_fast;
 wire LCD_if_send_px_cmd_fast;
@@ -130,7 +136,12 @@ cdc_dff_f2s lcd_if_cdc_4(
     /*output wire */.data_out(LCD_if_begin_slow),
     /*input wire */.data_in(LCD_if_begin_fast));
 
-assign LCD_if_busy_fast = LCD_if_busy_slow;
+//assign LCD_if_busy_fast = LCD_if_busy_slow;
+cdc_dff_s2f lcd_if_cdc_5(
+    /*input wire */.rst_n(rst_n),
+    /*input wire */.clk_fast(clk_4M),
+    /*output wire */.data_out(LCD_if_busy_fast),
+    /*input wire */.data_in(LCD_if_busy_slow));
 
 
 
@@ -170,6 +181,17 @@ d_pic_f main_fsm(
     /*output */.sys_wait_led(sys_wait_led),
     /*output [2:0]*/.ip_c_state(ip_c_state)
 );
+
+
+wire lcd_spi_begin;
+wire lcd_spi_busy;
+wire lcd_spi_wide;
+wire [31:0]lcd_spi_mosi_d;
+wire [31:0]stream_data;
+wire stream_busy;
+wire stream_trigger;
+
+wire lcd_busy;
 
 
 wire sd_spi_begin;
@@ -232,15 +254,6 @@ spi_front sd_phy_0(
     .spi_busy(sd_spi_busy)
 );
 
-wire lcd_spi_begin;
-wire lcd_spi_busy;
-wire lcd_spi_wide;
-wire [31:0]lcd_spi_mosi_d;
-wire [31:0]stream_data;
-wire stream_busy;
-wire stream_trigger;
-
-wire lcd_busy;
 
 lcd_if lcd_if_0(
     .clk(clk_1M),
@@ -302,9 +315,9 @@ wire uart_ready;
 
 uart_front #(
     .p_baud_rate(250000.0),
-    .p_clk_freq(5000000.0)
+    .p_clk_freq(20000000.0)
 ) dut(
-    .clk(clk_1M),
+    .clk(clk_4M),
     .rst_n(rst_n),
 
     //uart interface
@@ -320,7 +333,7 @@ uart_front #(
 );
 
 ctl_if dut_1(
-    .clk(clk_1M),
+    .clk(clk_4M),
     .rst_n(rst_n),
 
     //uart interface

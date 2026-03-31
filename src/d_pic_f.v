@@ -150,31 +150,6 @@ reg LCD_if_stream_r;
 reg LCD_if_begin_r;
 reg ctl_ready_r;
 
-assign SD_if_im_idx = SD_if_im_idx_r;
-assign SD_if_init = SD_if_init_r;
-assign SD_if_send_rd_cmd = SD_if_send_rd_cmd_r;
-assign SD_if_stream = SD_if_stream_r;
-assign SD_if_end_of_frame = end_of_frame_r;
-assign SD_if_begin = SD_if_begin_r;
-assign LCD_if_init = LCD_if_init_r;
-assign LCD_if_send_px_cmd = LCD_if_send_px_cmd_r;
-assign LCD_if_stream = LCD_if_stream_r;
-assign LCD_if_end_of_frame = end_of_frame_r;
-assign LCD_if_begin = LCD_if_begin_r;
-assign ctl_ready = ctl_ready_r;
-//sys busy led driver
-assign sys_wait_led = ~|(pic_state ^ PIC_STATE_wait_uart);
-
-//input sample reg
-
-
-reg SD_if_busy_r;
-reg LCD_if_busy_r;
-
-reg ctl_decr_r;
-reg ctl_incr_r;
-reg ctl_valid_r;
-
 
 //internal reg
 reg [2:0] pic_state;
@@ -189,6 +164,17 @@ wire [3:0] im_idx_decr;
 assign im_idx_decr = SD_if_im_idx_r - 4'h1;
 wire [3:0] im_idx_incr;
 assign im_idx_incr = SD_if_im_idx_r + 4'h1;
+
+//input sample reg
+
+
+reg SD_if_busy_r;
+reg LCD_if_busy_r;
+
+reg ctl_decr_r;
+reg ctl_incr_r;
+reg ctl_valid_r;
+
 
 wire if_busy;
 assign if_busy = SD_if_busy_r | LCD_if_busy_r;
@@ -209,6 +195,22 @@ always @(posedge clk_4M ) begin
     ctl_valid_r <= ctl_valid;
 end
 
+
+
+assign SD_if_im_idx = SD_if_im_idx_r;
+assign SD_if_init = SD_if_init_r;
+assign SD_if_send_rd_cmd = SD_if_send_rd_cmd_r;
+assign SD_if_stream = SD_if_stream_r;
+assign SD_if_end_of_frame = end_of_frame_r;
+assign SD_if_begin = SD_if_begin_r;
+assign LCD_if_init = LCD_if_init_r;
+assign LCD_if_send_px_cmd = LCD_if_send_px_cmd_r;
+assign LCD_if_stream = LCD_if_stream_r;
+assign LCD_if_end_of_frame = end_of_frame_r;
+assign LCD_if_begin = LCD_if_begin_r;
+assign ctl_ready = ctl_ready_r;
+//sys busy led driver
+assign sys_wait_led = ~|(pic_state ^ PIC_STATE_wait_uart);
 
 
 /*
